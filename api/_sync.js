@@ -1,5 +1,6 @@
 import { query, one } from "./_db.js";
 import { scoreboard, boxscore, playByPlay, schoolsIndex, parseGame, PARSER_VERSION } from "./_ncaa.js";
+import { isDemoSeo, demoSchoolSeo } from "./_demo.js";
 
 // Keeps a team's NCAA data current. Work is done in small steps until a time budget runs out, then the
 // caller asks again (the nightly job loops; the backfill script loops). Every step is safe to repeat.
@@ -24,6 +25,7 @@ export async function syncTeam(team, budgetMs = 45000) {
   const did = { dates: 0, games: 0 };
   const seo = team.ncaa_seo || (await guessSeo(team));
   if (!seo) return { done: true, error: "no_ncaa_team", did };
+  if (isDemoSeo(seo)) return { done: true, did }; // the demo league is simulated, never fetched
   const T = today(), seasons = activeSeasons(team);
 
   // 1. scoreboards
@@ -78,6 +80,7 @@ async function finalGames(seo, seasons) {
 
 /** Fetches and parses one game if we don't have it (or the parser has improved since). Returns true if it did work. */
 export async function ensureGame(id) {
+  if (String(id).startsWith("demo-")) return false;
   const have = await one(`SELECT parser_v, (box IS NOT NULL AND pbp IS NOT NULL) AS full, fetched_at FROM ncaa_game_data WHERE game_id = $1`, [id]);
   if (have && have.full && have.parser_v === PARSER_VERSION) return false;
   if (have && !have.full && Date.now() - new Date(have.fetched_at) < 864e5) return false; // missing or failed: retry once a day
@@ -125,6 +128,7 @@ async function schools() {
 const norm = (s) => String(s || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, " ").trim();
 /** "Belmont" -> "belmont". Exact name or full name only; anything uncertain is left out rather than guessed. */
 export async function schoolSeo(name) {
+  const demo = demoSchoolSeo(name); if (demo) return demo;
   const n = norm(name); if (!n) return null;
   const hit = (await schools()).find((s) => norm(s.name) === n || norm(s.long) === n || s.slug === n.replace(/ /g, "-"));
   return hit ? hit.slug : null;

@@ -5,7 +5,7 @@ import { hashCode, newCode, newId } from "../api/_auth.js";
 
 export const DEMO_TEAM = { id: "team_demo_ridgeline", name: "Ridgeline State Owls", short: "Ridgeline St.", season: 2026 };
 
-const ROSTER = [
+export const ROSTER = [
   ["Mason", "Avery", "2", "SS", "R", "R", "Jr"],
   ["Tate", "Kowalczyk", "4", "2B", "L", "R", "So"],
   ["Rafael", "Ibarra-Stone", "7", "CF", "S", "R", "Sr"],
@@ -29,7 +29,7 @@ export async function seedDemo(codes = {}) {
   const T = DEMO_TEAM;
   await query(`DELETE FROM users WHERE id IN (SELECT user_id FROM members WHERE team_id = $1)`, [T.id]);
   await query(`DELETE FROM teams WHERE id = $1`, [T.id]);
-  await query(`INSERT INTO teams (id, name, short_name, season, demo) VALUES ($1, $2, $3, $4, true)`, [T.id, T.name, T.short, T.season]);
+  await query(`INSERT INTO teams (id, name, short_name, season, demo, ncaa_seo) VALUES ($1, $2, $3, $4, true, 'demo-ridgeline')`, [T.id, T.name, T.short, T.season]);
 
   const out = { coach: codes.coach || newCode(), players: {} };
   const coachId = newId("user");
@@ -38,8 +38,8 @@ export async function seedDemo(codes = {}) {
 
   for (const [first, last, jersey, pos, bats, throws, cls] of ROSTER) {
     const pid = "plr_demo_" + last.toLowerCase().replace(/[^a-z]/g, "");
-    await query(`INSERT INTO players (id, team_id, first_name, last_name, jersey, pos, bats, throws, class_year)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`, [pid, T.id, first, last, jersey, pos, bats, throws, cls]);
+    await query(`INSERT INTO players (id, team_id, first_name, last_name, jersey, pos, bats, throws, class_year, prev_school)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`, [pid, T.id, first, last, jersey, pos, bats, throws, cls, last === "Lindqvist" ? "Marrow Bay" : null]);
     // Two players get sign-ins so the player view can be shown; the rest are roster-only, like a real team at first.
     const code = codes.players?.[last] || (codes.players ? null : ["Avery", "Kowalczyk"].includes(last) ? newCode() : null);
     if (!code) continue;

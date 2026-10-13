@@ -33,6 +33,10 @@ const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", "
 await memoryDatabase(path.join(root, ".devdb"));
 await seedDemo(DEV_CODES);
 await createAdmin("Warren (local admin)", DEV_CODES.admin);
+const { buildDemoSeasons } = await import("./_demo-season.js");
+const { ROSTER } = await import("./_seed.js");
+const built = await buildDemoSeasons({ roster: ROSTER.map((r) => [r[0], r[1], r[4], r[6]]), log: console.log });
+if (!built.skipped) console.log(`  demo league simulated: ${built.games} games, ${built.pitches} pitches`);
 const { loadTrialPlayers } = await import("./_trial.js");
 const trial = await loadTrialPlayers(path.join(root, "trial"));
 if (trial.length) console.log("  trial players on the demo team: " + trial.join(", "));
