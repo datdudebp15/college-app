@@ -6,7 +6,7 @@ import { query } from "../api/_db.js";
 import { nameKey } from "../api/_ncaa.js";
 import { DEMO_LEAGUE } from "../api/_demo.js";
 
-export const DEMO_SEASON_VERSION = 5;
+export const DEMO_SEASON_VERSION = 6;
 const SEASONS = [2025, 2026];
 
 /* ---------- random numbers ---------- */
@@ -69,8 +69,10 @@ function makePitcher(role) {
 
 /* ---------- one plate appearance, pitch by pitch ---------- */
 const ZONE_X = 0.83, ZONE_LO = 1.5, ZONE_HI = 3.5;
-function choosePitch(p, balls, strikes) {
-  return pickW(p.arsenal.map((a) => ({ ...a, w: a.w * (a.breaking ? (strikes === 2 ? 1.5 : balls > strikes ? 0.6 : 1) : (balls > strikes ? 1.4 : 1)) })));
+function choosePitch(p, balls, strikes, bats) {
+  // same-side hitters see more sliders and curves, opposite-side more changeups and splitters
+  const same = bats === p.throws, hand = (t) => (/Slider|Sweeper|Curveball/.test(t) ? (same ? 1.45 : 0.7) : /Changeup|Splitter/.test(t) ? (same ? 0.55 : 1.55) : 1);
+  return pickW(p.arsenal.map((a) => ({ ...a, w: a.w * hand(a.type) * (a.breaking ? (strikes === 2 ? 1.5 : balls > strikes ? 0.6 : 1) : (balls > strikes ? 1.4 : 1)) })));
 }
 function locate(p, a, balls, strikes, bats) {
   const zoneP = clamp(p.command + (balls === 3 ? 0.15 : 0) - (strikes === 2 && balls < 3 ? 0.1 : 0) - (a.breaking ? 0.05 : 0), 0.25, 0.8);
@@ -89,7 +91,7 @@ function plateAppearance(p, h) {
   let balls = 0, strikes = 0, seq = "";
   const pitches = [];
   for (let n = 1; n <= 15; n++) {
-    const a = choosePitch(p, balls, strikes), loc = locate(p, a, balls, strikes, bats), z = inZone(loc);
+    const a = choosePitch(p, balls, strikes, bats), loc = locate(p, a, balls, strikes, bats), z = inZone(loc);
     const velo = Math.round(normal(a.velo, 0.9) * 10) / 10, spin = Math.round(normal(a.spin, 60));
     const before = { balls, strikes };
     const rec = { type: a.type, velo, spin, ivb: Math.round(normal(a.ivb, 1.4) * 10) / 10, hb: Math.round(normal(a.hb, 1.4) * 10) / 10, ext: Math.round(normal(p.ext, 0.08) * 100) / 100, relH: Math.round(normal(p.relH, 0.06) * 100) / 100, x: Math.round(loc.x * 100) / 100, z: Math.round(loc.z * 100) / 100, ...before };

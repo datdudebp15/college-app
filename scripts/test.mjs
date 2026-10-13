@@ -288,6 +288,21 @@ await test("game logs: coaches see any hitter, players only themselves, grades o
   assert.equal((await call("games", { method: "POST", code: AVERY, query: { team: T, game: list.games[0].id } })).status, 403);
 });
 
+console.log("pitcher pages");
+await test("pitcher page: arsenal, usage by count and hand, location, movement; any team member can open it", async () => {
+  const sc = (await call("scout", { code: COACH, query: { team: T, opp: "demo-ashgrove" } })).body;
+  const sp = sc.rotation[0];
+  const d = (await call("pitcher", { code: AVERY, query: { team: T, seo: "demo-ashgrove", pitcher: sp.key } })).body;
+  assert.equal(d.name, sp.name);
+  assert.ok(d.tracked > 300 && d.arsenal.length >= 2);
+  const use = d.arsenal.reduce((s, a) => s + a.usage, 0); assert.ok(Math.abs(use - 100) < 1, "usage adds to 100: " + use);
+  assert.ok(d.arsenal.every((a) => a.velo > 60 && a.spin > 1000 && a.ivb != null));
+  assert.equal(d.byCount.length, 6); assert.equal(d.vsHand.length, 2);
+  assert.ok(Object.keys(d.locations).length === d.arsenal.length + 1 && d.movement.length > 100);
+  assert.equal((await call("pitcher", { code: OTHER_COACH, query: { team: T, seo: "demo-ashgrove", pitcher: sp.key } })).status, 404);
+  assert.equal((await call("pitcher", { code: COACH, query: { team: T, seo: "demo-ashgrove", pitcher: "x; drop" } })).status, 400);
+});
+
 console.log("roster import");
 // A fictional roster page in the WMT Digital format (Nuxt "devalue" data: one flat array, objects point at entries by index).
 function nuxtPage(root) {
