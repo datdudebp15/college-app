@@ -289,6 +289,30 @@ await test("game logs: coaches see any hitter, players only themselves, grades o
   assert.equal((await call("games", { method: "POST", code: AVERY, query: { team: T, game: list.games[0].id } })).status, 403);
 });
 
+await test("look up any team: roster, game log, box, a hitter's at-bats, a pitcher's outings; coaches only", async () => {
+  const ts = (await call("games", { code: COACH, query: { team: T, teams: "1" } })).body.teams;
+  assert.ok(ts[0].ours && ts.some((t) => t.seo === "demo-ashgrove"), JSON.stringify(ts.map((t) => t.seo)));
+  const R = (await call("games", { code: COACH, query: { team: T, seo: "demo-ashgrove", roster: "1" } })).body;
+  assert.ok(R.hitters.length >= 9 && R.pitchers.length >= 5 && R.season === 2026, JSON.stringify([R.hitters.length, R.pitchers.length, R.season]));
+  const log = (await call("games", { code: COACH, query: { team: T, seo: "demo-ashgrove", season: "2026" } })).body;
+  assert.ok(log.games.length > 30 && log.games.every((g) => g.line.pa >= 25));
+  const box = (await call("games", { code: COACH, query: { team: T, seo: "demo-ashgrove", game: log.games[0].id } })).body;
+  assert.ok(box.hitters.length >= 9 && box.pitchers.some((p) => p.started));
+  const h = R.hitters[0], hl = (await call("games", { code: COACH, query: { team: T, seo: "demo-ashgrove", hitter: h.key, season: "2026" } })).body;
+  assert.ok(hl.games.length > 20);
+  const hg = (await call("games", { code: COACH, query: { team: T, seo: "demo-ashgrove", hitter: h.key, game: hl.games[0].id } })).body;
+  assert.ok(hg.atBats.length >= 2 && hg.atBats.every((a) => /^[A-F]$/.test(a.grade) && a.pitches.length));
+  const pl = (await call("games", { code: COACH, query: { team: T, seo: "demo-ashgrove", pitcher: R.pitchers[0].key, season: "2026" } })).body;
+  const po = (await call("games", { code: COACH, query: { team: T, seo: "demo-ashgrove", pitcher: R.pitchers[0].key, game: pl.games[0].id } })).body;
+  assert.ok(pl.games.length > 5 && po.batters.length === po.game.bf && po.batters.every((b) => b.pitches.length), JSON.stringify([po.batters.length, po.game.bf]));
+  const ours = (await call("games", { code: COACH, query: { team: T, seo: "demo-ridgeline", roster: "1" } })).body;
+  assert.ok(ours.hitters.some((x) => x.playerId), "our hitters link to their player pages");
+  const ps = (await call("pitches", { code: COACH, query: { team: T, seo: "demo-ashgrove", batter: h.key, season: "2026" } })).body;
+  assert.ok(ps.summary.pitches > 200 && ps.rows.every((r) => r.batter_name === ps.rows[0].batter_name), "an opposing hitter's pitches");
+  assert.equal((await call("games", { code: AVERY, query: { team: T, teams: "1" } })).status, 403);
+  assert.equal((await call("games", { code: AVERY, query: { team: T, seo: "demo-ashgrove", roster: "1" } })).status, 403);
+});
+
 console.log("pitcher pages");
 await test("pitcher page: arsenal, usage by count and hand, location, movement; any team member can open it", async () => {
   const sc = (await call("scout", { code: COACH, query: { team: T, opp: "demo-ashgrove" } })).body;

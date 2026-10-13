@@ -2,10 +2,12 @@ import { handler, access, canSeePlayer, isCoach } from "./_auth.js";
 import { query, one } from "./_db.js";
 import { nameKey } from "./_ncaa.js";
 import { schoolSeo } from "./_sync.js";
+import { keysFor } from "./_lookup.js";
 
 // Pitch search and the pictures built from it: summary numbers, a heat map grid and spray points.
 //   GET ?team=T [&player=P] [&season=2026] [&type=Fastball|fast|breaking|offspeed] [&count=0-2|ahead|behind|even|two]
 //       [&result=swing|take|whiff|chase|inplay|hit|k] [&hand=L|R] [&opp=<seo>] [&limit=200]
+//   Coaches can search any team's hitters too: &seo=<their team> [&batter=<key>]
 // Coaches may search the whole team or any player; a player always gets only his own pitches.
 // Pitch data comes from TrackMan (or the simulated demo season); play-by-play alone has no locations.
 const FAST = ["Fastball", "Sinker", "Cutter"], BREAKING = ["Slider", "Sweeper", "Curveball"], OFFSPEED = ["Changeup", "Splitter", "Knuckleball"];
@@ -28,7 +30,13 @@ export default handler(async (req, res, user) => {
   if (playerId && !canSeePlayer(me, playerId)) return res.status(404).json({ error: "not_found" });
   const where = [], params = [];
   const add = (sql, ...v) => { let s = sql; v.forEach((x) => { params.push(x); s = s.replace("?", "$" + params.length); }); where.push(s); };
-  if (playerId) {
+  const other = isCoach(me) && req.query.seo && String(req.query.seo) !== seo ? String(req.query.seo).toLowerCase() : null;
+  if (other) {
+    if (!/^[a-z0-9:_-]{2,80}$/.test(other)) return res.status(400).json({ error: "bad_request" });
+    const bk = String(req.query.batter || "");
+    if (bk) { if (!/^[a-z]+\|[a-z]?$/.test(bk)) return res.status(400).json({ error: "bad_request" }); add("batter_key = ANY(?::text[])", await keysFor(other, bk, "bat")); }
+    add("bat_seo = ?", other);
+  } else if (playerId) {
     const p = await one(`SELECT * FROM players WHERE id = $1 AND team_id = $2`, [playerId, teamId]);
     if (!p) return res.status(404).json({ error: "not_found" });
     const prev = p.prev_school ? await schoolSeo(p.prev_school) : null;
@@ -84,7 +92,7 @@ export default handler(async (req, res, user) => {
       p.pitcher_throws, p.video_url, p.plate_x, p.plate_z, g.home_seo, g.home_name, g.away_name
     FROM pitches p LEFT JOIN ncaa_games g ON g.id = p.game_id ${W.replace(/\b(batter_key|bat_seo|season|pitch_type|balls|strikes|call|result|pitcher_throws|pitch_seo|plate_x|plate_z)\b/g, "p.$1")}
     ORDER BY p.date DESC, p.inning DESC, p.pa_ref DESC, p.pitch_no DESC LIMIT ${limit}`, params))
-    .map((r) => ({ ...r, opponent: r.home_seo === seo ? r.away_name : r.home_name, home: r.home_seo === seo }));
+    .map((r) => ({ ...r, opponent: r.home_seo === (other || seo) ? r.away_name : r.home_name, home: r.home_seo === (other || seo) }));
   const types = (await query(`SELECT pitch_type, count(*)::int AS n FROM pitches ${W} GROUP BY 1 ORDER BY 2 DESC`, params)).filter((t) => t.pitch_type);
   return res.json({ summary, grid, points, spray, rows, types, gridX: GX, gridZ: GZ });
 });

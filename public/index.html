@@ -274,6 +274,7 @@ figure.mv{margin:0;background:var(--card-2);border-radius:18px;padding:10px}
 .grade.gA{background:var(--good-soft);color:var(--good)} .grade.gB{background:var(--accent-soft);color:var(--accent)} .grade.gC{background:var(--fill);color:var(--ink-2)}
 .grade.gD{background:rgba(245,158,11,.16);color:var(--warn)} .grade.gF{background:var(--bad-soft);color:var(--bad)}
 .row.game{grid-template-columns:40px 1fr auto}
+.pt2{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;font:800 13px var(--font);background:var(--accent-soft);color:var(--accent)}
 .wl{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;font:800 16px var(--font);background:var(--fill);color:var(--ink-2)} .wl.w{background:var(--good-soft);color:var(--good)} .wl.l{background:var(--bad-soft);color:var(--bad)} .row.game .gl{font-size:13px;font-weight:700;color:var(--ink-2);text-align:right;white-space:nowrap}
 .abt{display:block;font-weight:800;font-size:16px;letter-spacing:-.02em} .ab-card .meta{font-size:13px;color:var(--muted)}
 .abgrid{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:start}
@@ -742,33 +743,111 @@ function pitchCard(id, season) {
     ${pitchSummary(d.summary)}
     ${seg("metric", st.metric, [["swingPct", "Swing"], ["whiffPct", "Miss"], ["ev", "Exit velo"], ["hardPct", "Hard-hit"]])}
     <div class="pics">${heatMap(d.points, st.metric)}${d.spray.length ? sprayChart(d.spray) : ""}</div>
-    <button class="btn soft" data-act="pd-search" data-id="${esc(id)}" data-season="${esc(season)}">See every pitch</button></section>`;
+    <button class="btn soft" data-act="pd-search" data-id="${esc(id)}" data-season="${esc(season)}">Search his pitches and games</button></section>`;
 }
 
-/* ---------- Search (coaches: the team or any hitter; players: themselves) ---------- */
+/* ---------- Search: any team in the data, its hitters and pitchers, and their game logs ---------- */
+const LK = {};
+function look(q) {
+  const k = JSON.stringify(q);
+  if (!LK[k]) { LK[k] = { loading: true }; api("games", { query: { team: S.team.team.id, ...q } }).then((d) => { LK[k] = { data: d }; }).catch((e) => { LK[k] = { error: e.code }; })
+    .finally(() => { if (S.sheet && S.sheet.lk === k) renderSheet(false); else if (S.view === "team" && S.tab === "search") renderPage(); }); }
+  return Object.assign(LK[k], { k });
+}
+const COUNTS = [0, 1, 2, 3].flatMap((b) => [0, 1, 2].map((s) => `${b}-${s}`));
+const waitCard = (st, what) => st && st.error ? `<div class="card"><p class="muted" style="margin:0">Couldn't load ${what} right now.</p></div>` : `<section class="card"><div class="skel"></div><div class="skel short"></div></section>`;
 function searchPage() {
-  const f = S.sf || (S.sf = { player: coach() ? "" : (S.team.players[0] || {}).id || "", season: "", type: "", count: "", result: "", hand: "", metric: "swingPct" });
-  const q = Object.fromEntries(Object.entries({ player: f.player, season: f.season, type: f.type, count: f.count, result: f.result, hand: f.hand }).filter(([, v]) => v));
-  const r = loadPD(f.player || "team", q), d = r.data;
-  const sel = (id, cur, opts) => `<select data-sf="${id}">${opts.map(([v, l]) => `<option value="${esc(v)}"${String(cur) === String(v) ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
-  const seasons = [...new Set([S.team.team.season, S.team.team.season - 1, S.team.team.season - 2])];
-  const filters = `<section class="card"><div class="grid">
-      ${coach() ? `<label class="f full">Hitter${sel("player", f.player, [["", "Whole team"], ...S.team.players.map((p) => [p.id, fullName(p)])])}</label>` : ""}
-      <label class="f">Season${sel("season", f.season, [["", "All seasons"], ...seasons.map((y) => [y, y])])}</label>
+  const ours = S.team.team.ncaaSeo || "";
+  const f = S.sf || (S.sf = { seo: ours, who: coach() ? "" : "id:" + ((S.team.players[0] || {}).id || ""), season: "", type: "", count: "", result: "", hand: "", metric: "swingPct" });
+  if (!f.seo) f.seo = ours;
+  if (!f.seo) return lt("Search", "") + `<div class="card"><p class="muted" style="margin:0">Link your team to ncaa.com on the Team tab to search games and players.</p></div>`;
+  const isOurs = f.seo === ours;
+  const opts = (xs, cur) => xs.map(([v, l]) => `<option value="${esc(v)}"${String(cur) === String(v) ? " selected" : ""}>${esc(l)}</option>`).join("");
+  const sel = (id, cur, xs) => `<select data-sf="${id}">${opts(xs, cur)}</select>`;
+  const tl = coach() ? look({ teams: 1 }) : null;
+  const ro = look({ seo: f.seo, roster: 1, ...(f.season ? { season: f.season } : {}) }), R = ro.data;
+  const season = Number(f.season) || (R && R.season) || S.team.team.season;
+  const i = f.who.indexOf(":"), kind = i > 0 ? f.who.slice(0, i) : "", key = i > 0 ? f.who.slice(i + 1) : "";
+  const hitters = isOurs ? S.team.players.map((p) => ["id:" + p.id, fullName(p)]) : R ? R.hitters.map((h) => ["h:" + h.key, h.name]) : [];
+  const pitchers = R ? R.pitchers.map((p) => ["p:" + p.key, p.name]) : [];
+  const teamName = isOurs ? S.team.team.name : (R && R.name) || ((tl && tl.data && tl.data.teams.find((t) => t.seo === f.seo)) || {}).name || f.seo;
+  const filters = coach() ? `<section class="card"><div class="grid">
+      ${tl && tl.data ? `<label class="f full">Team${sel("seo", f.seo, tl.data.teams.map((t) => [t.seo, t.ours ? t.name + " (us)" : t.name]))}</label>` : ""}
+      <label class="f full">Player<select data-sf="who"><option value="">Whole team</option>${hitters.length ? `<optgroup label="Hitters">${opts(hitters, f.who)}</optgroup>` : ""}${pitchers.length ? `<optgroup label="Pitchers">${opts(pitchers, f.who)}</optgroup>` : ""}</select></label>
+      <label class="f full">Season${sel("season", season, ((R && R.seasons.length) ? R.seasons : [season]).map((y) => [y, y]))}</label></div></section>` : "";
+  const sub = kind === "p" ? `${esc(teamName)} · pitcher` : kind ? esc(teamName) : `${esc(teamName)} · whole team`;
+  if (!R) return lt("Search", "") + filters + waitCard(ro, "this team");
+
+  // a pitcher: his report (arsenal, counts, locations) and every outing
+  if (kind === "p") {
+    const [name, body] = pitcherSheet({ seo: f.seo, key, season, inline: true });
+    return lt(name === "Pitcher" ? "Search" : name, sub) + filters + body + logCard({ pitcher: key }, f.seo, season);
+  }
+
+  // hitters (or the whole team): pitch data, then the game log
+  const q = { season: String(season), ...(f.type ? { type: f.type } : {}), ...(f.count ? { count: f.count } : {}), ...(f.result ? { result: f.result } : {}), ...(f.hand ? { hand: f.hand } : {}) };
+  if (!isOurs) { q.seo = f.seo; if (kind === "h") q.batter = key; }
+  const r = loadPD(kind === "id" ? key : "team", q), d = r.data;
+  const pf = `<div class="grid">
       <label class="f">Pitch${sel("type", f.type, [["", "All pitches"], ["fast", "Fastballs"], ["breaking", "Breaking balls"], ["offspeed", "Off-speed"], ...((d && d.types) || []).map((x) => [x.pitch_type, x.pitch_type])])}</label>
-      <label class="f">Count${sel("count", f.count, [["", "Any count"], ["ahead", "Hitter ahead"], ["even", "Even"], ["behind", "Hitter behind"], ["two", "Two strikes"], ...["0-0", "1-0", "0-1", "1-1", "2-0", "2-1", "1-2", "2-2", "3-1", "3-2", "0-2"].map((c) => [c, c])])}</label>
+      <label class="f">Count${sel("count", f.count, [["", "Any count"], ["ahead", "Hitter ahead"], ["even", "Even"], ["behind", "Hitter behind"], ["two", "Two strikes"], ...COUNTS.map((c) => [c, c])])}</label>
       <label class="f">Result${sel("result", f.result, [["", "Any"], ["swing", "Swings"], ["take", "Takes"], ["whiff", "Misses"], ["chase", "Chases"], ["inplay", "Balls in play"], ["hit", "Hits"], ["k", "Strikeouts"]])}</label>
-      <label class="f">Pitcher${sel("hand", f.hand, [["", "Either hand"], ["R", "Righties"], ["L", "Lefties"]])}</label></div></section>`;
-  if (!d) return lt(coach() ? "Search" : "Your pitches", "") + filters + (r.error ? `<div class="card"><p class="muted" style="margin:0">Couldn't search right now.</p></div>` : `<section class="card"><div class="skel"></div><div class="skel short"></div></section>`);
-  if (!d.summary.pitches) return lt(coach() ? "Search" : "Your pitches", "") + filters + `<div class="card"><p class="muted" style="margin:0">No pitches match. Pitch data comes from TrackMan (connect it on the Team tab).</p></div>`;
+      <label class="f">Pitcher${sel("hand", f.hand, [["", "Either hand"], ["R", "Righties"], ["L", "Lefties"]])}</label></div>`;
   const seg = `<div class="seg">${[["swingPct", "Swing"], ["whiffPct", "Miss"], ["ev", "Exit velo"], ["hardPct", "Hard-hit"]].map(([v, l]) => `<button data-act="sf-metric" data-v="${v}" aria-pressed="${f.metric === v}">${l}</button>`).join("")}</div>`;
-  const CALL = { ball: "Ball", called_strike: "Called strike", swinging_strike: "Swing and miss", foul: "Foul", in_play: "In play", hbp: "Hit by pitch" };
-  const list = `<div class="list inset plist">${d.rows.map((p) => `<div class="prow"><span class="pt">${esc((p.pitch_type || "?").slice(0, 2).toUpperCase())}</span>
-      <span><b>${esc(p.pitch_type || "Pitch")} ${p.velo ? esc(p.velo.toFixed(1)) : ""}</b><span class="meta">${esc(gameDay(p.date))} ${p.home ? "vs" : "at"} ${esc(p.opponent || "")} · ${esc(ordinal(p.inning))} · ${p.balls}-${p.strikes}${coach() && !f.player ? " · " + esc(p.batter_name || "") : ""} · ${esc(p.pitcher_name || "")} (${esc(p.pitcher_throws || "?")})</span></span>
-      <span class="pres"><b>${esc(p.result && p.call === "in_play" ? OUTC[p.result] || p.result : CALL[p.call] || p.call)}</b>${p.ev ? `<span class="meta">${p.ev.toFixed(0)} mph · ${Math.round(p.la)}°${p.distance ? " · " + Math.round(p.distance) + " ft" : ""}</span>` : ""}${p.video_url ? `<a class="link" href="${esc(p.video_url)}" target="_blank" rel="noopener">Video</a>` : ""}</span></div>`).join("")}</div>`;
-  return lt(coach() ? "Search" : "Your pitches", d.rows.length < d.summary.pitches ? `Newest ${d.rows.length} of ${d.summary.pitches} pitches` : `${d.summary.pitches} pitches`) + filters
-    + `<section class="card">${pitchSummary(d.summary)}${seg}<div class="pics">${heatMap(d.points, f.metric)}${d.spray.length ? sprayChart(d.spray) : ""}</div></section>`
-    + `<section class="card"><div class="hd"><h3>Pitches</h3><span class="muted small">newest first</span></div>${list}</section>`;
+  const pitchData = !d ? `<section class="card"><h3>Pitch data</h3>${pf}<div class="skel"></div></section>`
+    : !d.summary.pitches ? `<section class="card"><div class="hd"><h3>Pitch data</h3></div>${pf}<p class="muted" style="margin:0">${f.type || f.count || f.result || f.hand ? "No pitches match." : "No pitch tracking for these games. It comes from TrackMan on fields that have it."}</p></section>`
+    : `<section class="card"><div class="hd"><h3>Pitch data</h3><span class="muted small">${d.summary.pitches.toLocaleString()} pitches</span></div>${pf}${pitchSummary(d.summary)}${seg}<div class="pics">${heatMap(d.points, f.metric)}${d.spray.length ? sprayChart(d.spray) : ""}</div></section>`;
+  const title = kind === "id" ? fullName(playerById(key) || { first: "Player", last: "" }) : kind === "h" ? (R.hitters.find((h) => h.key === key) || {}).name || "Hitter" : "Search";
+  const log = kind === "id" ? ourLogCard(key, season) : logCard(kind === "h" ? { hitter: key } : {}, f.seo, season);
+  return lt(title, sub) + filters + log + pitchData;
+}
+// game log rows: our player's (Claude-graded), any hitter's, a team's, or a pitcher's outings
+function ourLogCard(pid, season) {
+  const st = loadGames(pid), d = st.data;
+  if (!d) return waitCard(st, "his games");
+  const games = d.games.filter((g) => g.season === season);
+  return `<section class="card"><div class="hd"><h3>Game log</h3><span class="muted small">${games.length} game${games.length === 1 ? "" : "s"} · tap for at-bats</span></div>${games.length ? gameRows(games, pid) : `<p class="muted" style="margin:0">No games in ${season}.</p>`}</section>`;
+}
+function logCard(q, seo, season) {
+  const st = look({ seo, season, ...q }), d = st.data;
+  if (!d) return waitCard(st, "the game log");
+  const wl = (g) => `<span class="wl ${g.us > g.them ? "w" : g.us < g.them ? "l" : "t"}">${g.us > g.them ? "W" : g.us < g.them ? "L" : "T"}</span>`;
+  const row = (g, act, right) => `<button class="row game" data-act="sheet" data-s="${act}" data-seo="${esc(seo)}" data-key="${esc(q.hitter || q.pitcher || "")}" data-game="${esc(g.id)}">${wl(g)}
+    <span><b>${g.home ? "vs" : "at"} ${esc(g.opponent)}</b><span class="meta">${esc(gameDay(g.date))} · ${g.us}-${g.them}</span></span><span class="gl">${esc(right)}</span></button>`;
+  const rows = q.pitcher ? d.games.map((g) => row(g, "xouting", `${g.started ? "GS · " : ""}${g.ip} IP · ${g.h} H · ${g.bb} BB · ${g.k} K`))
+    : d.games.map((g) => row(g, q.hitter ? "xgame" : "box", lineText(g.line)));
+  const what = q.pitcher ? "tap for batters faced" : q.hitter ? "tap for at-bats" : "tap for the box";
+  return `<section class="card"><div class="hd"><h3>Game log</h3><span class="muted small">${d.games.length} game${d.games.length === 1 ? "" : "s"} · ${what}</span></div>${rows.length ? `<div class="list inset">${rows.join("")}</div>` : `<p class="muted" style="margin:0">No games in ${season}.</p>`}</section>`;
+}
+// any team's box for one game: hitters' lines (tap for at-bats) and pitchers' lines (tap for batters faced)
+function boxSheet(s) {
+  const st = look({ seo: s.seo, game: s.game }), d = st.data; s.lk = st.k;
+  if (!d) return ["Game", st.error ? `<p class="muted">Couldn't load this game.</p>` : `<div class="skel"></div>`];
+  const g = d.game;
+  const hit = d.hitters.map((h) => `<button class="row game" data-act="sheet" ${h.playerId ? `data-s="game" data-id="${esc(h.playerId)}"` : `data-s="xgame" data-seo="${esc(s.seo)}" data-key="${esc(h.key)}"`} data-game="${esc(g.id)}"><span class="pt2">${esc(h.name.split(" ").map((w) => w[0]).join("").slice(0, 2))}</span><span><b>${esc(h.name)}</b></span><span class="gl">${esc(lineText(h.line))}</span></button>`).join("");
+  const pit = d.pitchers.map((p) => `<button class="row game" data-act="sheet" data-s="xouting" data-seo="${esc(s.seo)}" data-key="${esc(p.key)}" data-game="${esc(g.id)}"><span class="pt2">${p.started ? "GS" : "RP"}</span><span><b>${esc(p.name)}</b></span><span class="gl">${p.ip} IP · ${p.h} H · ${p.bb} BB · ${p.k} K</span></button>`).join("");
+  return [`${g.team} ${g.home ? "vs" : "at"} ${g.opponent}`, `<section class="card"><b class="abt">${esc(gameDay(g.date))} · ${g.us > g.them ? "W" : g.us < g.them ? "L" : "T"} ${g.us}-${g.them}</b><span class="meta">Team: ${esc(lineText(g.line))}</span></section>
+    <section class="card"><div class="hd"><h3>Hitters</h3><span class="muted small">tap for at-bats</span></div><div class="list inset">${hit || `<p class="muted">No play-by-play for this game.</p>`}</div></section>
+    ${pit ? `<section class="card"><div class="hd"><h3>Pitchers</h3><span class="muted small">tap for batters faced</span></div><div class="list inset">${pit}</div></section>` : ""}`];
+}
+// any hitter's game: his at-bats, graded by the app's rules
+function xgameSheet(s) {
+  const st = look({ seo: s.seo, hitter: s.key, game: s.game }), d = st.data; s.lk = st.k;
+  if (!d) return ["Game", st.error ? `<p class="muted">Couldn't load this game.</p>` : `<div class="skel"></div><div class="skel short"></div>`];
+  const g = d.game;
+  return [`${g.home ? "vs" : "at"} ${g.opponent}`, `<section class="card"><div class="hd"><div><b class="abt">${esc(gameDay(g.date))} · ${g.us > g.them ? "W" : g.us < g.them ? "L" : "T"} ${g.us}-${g.them}</b><span class="meta">${esc(d.who.name)} · ${esc(lineText(g.line))}</span></div>${gradeChip(d.gameGrade).replace('class="grade', 'class="grade big')}</div>
+      <p class="by">Graded from every pitch by the app's rules</p></section>${atBatCards(d.atBats)}${SEQKEY}`];
+}
+// one pitcher's outing: every batter he faced, pitch by pitch
+function xoutingSheet(s) {
+  const st = look({ seo: s.seo, pitcher: s.key, game: s.game }), d = st.data; s.lk = st.k;
+  if (!d) return ["Outing", st.error ? `<p class="muted">Couldn't load this outing.</p>` : `<div class="skel"></div><div class="skel short"></div>`];
+  const g = d.game;
+  const cards = d.batters.map((b) => `<section class="card ab-card"><div class="hd"><div><b class="abt">${esc(ordinal(b.inning))} inning · ${esc(b.batter)}</b><span class="meta">${esc(OUTC[b.outcome] || b.outcome)}${b.pitches[0] && b.pitches[0].side ? " · bats " + esc(b.pitches[0].side) : ""}</span></div></div>
+      ${b.pitches.length ? `<div class="abgrid">${miniZone(b.pitches)}<div class="plist2">${b.pitches.map((x) => `<div class="pr"><span class="pn2 ${x.call}">${x.no}</span><span><b>${esc(x.type || "Pitch")}${x.velo ? " " + x.velo.toFixed(0) : ""}</b> <span class="meta">${x.balls}-${x.strikes}</span></span><span class="pc">${esc(CALLW[x.call] || x.call)}${x.ev ? ` · ${Math.round(x.ev)} mph, ${Math.round(x.la)}°` : ""}</span></div>`).join("")}</div></div>`
+        : `<p class="seqrow">${seqChips({ seq: b.seq || "", outcome: b.outcome })}<span class="muted small">pitch sequence from play-by-play</span></p>`}</section>`).join("");
+  return [d.name, `<section class="card"><b class="abt">${esc(gameDay(g.date))} ${g.home ? "vs" : "at"} ${esc(g.opponent)} · ${g.us > g.them ? "W" : g.us < g.them ? "L" : "T"} ${g.us}-${g.them}</b>
+      <span class="meta">${g.started ? "Started · " : ""}${g.ip} IP · ${g.bf} batters · ${g.h} H · ${g.bb} BB · ${g.k} K${g.hr ? ` · ${g.hr} HR` : ""}${g.pitches ? ` · ${g.pitches} pitches` : ""}</span></section>${cards}${SEQKEY}`];
 }
 const ordinal = (n) => n + (n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th");
 
@@ -777,7 +856,7 @@ const GL = {};
 function loadGames(pid) {
   const k = S.team.team.id + "|" + pid;
   if (!GL[k]) { GL[k] = { loading: true }; api("games", { query: { team: S.team.team.id, player: pid } }).then((d) => { GL[k] = { data: d }; }).catch((e) => { GL[k] = { error: e.code }; })
-    .finally(() => { if (S.sheet && (S.sheet.kind === "player" || S.sheet.kind === "gamelog") && S.sheet.id === pid) renderSheet(false); else if (S.view === "team" && S.tab === "games") renderPage(); }); }
+    .finally(() => { if (S.sheet && (S.sheet.kind === "player" || S.sheet.kind === "gamelog") && S.sheet.id === pid) renderSheet(false); else if (S.view === "team" && (S.tab === "games" || S.tab === "search")) renderPage(); }); }
   return GL[k];
 }
 const gradeChip = (g) => g ? `<span class="grade g${esc(g[0])}">${esc(g)}</span>` : "";
@@ -820,21 +899,25 @@ function miniZone(pitches) {
   return `<svg class="mz" viewBox="0 0 120 150" role="img" aria-label="Where each pitch was, catcher's view"><rect x="${X(-0.83)}" y="${Z(3.5)}" width="${0.83 * 2 * 34}" height="${2 * 30}" rx="3" class="zb"/>${dots}</svg>`;
 }
 const CALLW = { ball: "Ball", called_strike: "Called strike", swinging_strike: "Swing and miss", foul: "Foul", in_play: "In play", hbp: "Hit by pitch" };
+function atBatCards(atBats) {
+  return atBats.map((a) => `<section class="card ab-card"><div class="hd"><div><b class="abt">${esc(ordinal(a.inning))} inning · ${esc(OUTC[a.outcome] || a.outcome)}</b><span class="meta">vs ${esc(a.pitcher || "")}${a.pitches[0] && a.pitches[0].throws ? " (" + esc(a.pitches[0].throws) + "HP)" : ""}</span></div>${gradeChip(a.grade)}</div>
+      ${a.summary ? `<p style="margin:0">${esc(a.summary)}</p>` : ""}
+      ${a.pitches.length ? `<div class="abgrid">${miniZone(a.pitches)}<div class="plist2">${a.pitches.map((x) => `<div class="pr"><span class="pn2 ${x.call}">${x.no}</span><span><b>${esc(x.type || "Pitch")}${x.velo ? " " + x.velo.toFixed(0) : ""}</b> <span class="meta">${x.balls}-${x.strikes}${x.spot ? " · " + esc(x.spot) : ""}</span></span><span class="pc">${esc(CALLW[x.call] || x.call)}${x.ev ? ` · ${Math.round(x.ev)} mph, ${Math.round(x.la)}°` : ""}${x.video ? ` · <a class="link" href="${esc(x.video)}" target="_blank" rel="noopener">Video</a>` : ""}</span></div>`).join("")}</div></div>`
+        : `<p class="seqrow">${seqChips({ seq: a.seq || "", outcome: a.outcome })}<span class="muted small">pitch sequence from play-by-play</span></p>`}</section>`).join("");
+}
+const SEQKEY = `<p class="seqkey"><span class="pn2 ball">1</span>ball <span class="pn2 called_strike">2</span>called strike <span class="pn2 swinging_strike">3</span>swing and miss <span class="pn2 foul">4</span>foul <span class="pn2 in_play">5</span>in play</p>`;
 function gameSheet(s) {
   const st = loadGame(s.id, s.game), d = st.data, p = playerById(s.id) || (S.team.players[0] || {});
   if (!d) return ["Game", st.error ? `<p class="muted">Couldn't load this game.</p>` : `<div class="skel"></div><div class="skel short"></div>`];
   const g = d.game, n = d.note || {};
-  const ab = d.atBats.map((a) => `<section class="card ab-card"><div class="hd"><div><b class="abt">${esc(ordinal(a.inning))} inning · ${esc(OUTC[a.outcome] || a.outcome)}</b><span class="meta">vs ${esc(a.pitcher || "")}${a.pitches[0] && a.pitches[0].throws ? " (" + esc(a.pitches[0].throws) + "HP)" : ""}</span></div>${gradeChip(a.grade)}</div>
-      ${a.summary ? `<p style="margin:0">${esc(a.summary)}</p>` : ""}
-      ${a.pitches.length ? `<div class="abgrid">${miniZone(a.pitches)}<div class="plist2">${a.pitches.map((x) => `<div class="pr"><span class="pn2 ${x.call}">${x.no}</span><span><b>${esc(x.type || "Pitch")}${x.velo ? " " + x.velo.toFixed(0) : ""}</b> <span class="meta">${x.balls}-${x.strikes}${x.spot ? " · " + esc(x.spot) : ""}</span></span><span class="pc">${esc(CALLW[x.call] || x.call)}${x.ev ? ` · ${Math.round(x.ev)} mph, ${Math.round(x.la)}°` : ""}${x.video ? ` · <a class="link" href="${esc(x.video)}" target="_blank" rel="noopener">Video</a>` : ""}</span></div>`).join("")}</div></div>`
-        : `<p class="seqrow">${seqChips({ seq: a.seq || "", outcome: a.outcome })}<span class="muted small">pitch sequence from play-by-play</span></p>`}</section>`).join("");
+  const ab = atBatCards(d.atBats);
   return [`${g.home ? "vs" : "at"} ${g.opponent}`, `
     <section class="card"><div class="hd"><div><b class="abt">${esc(gameDay(g.date))} · ${g.us > g.them ? "W" : g.us < g.them ? "L" : "T"} ${g.us}-${g.them}</b><span class="meta">${esc(fullName(p))} · ${esc(lineText(g.line))}</span></div>${gradeChip(d.gameGrade).replace('class="grade', 'class="grade big')}</div>
       ${n.game && n.game.summary ? `<p style="margin:0">${esc(n.game.summary)}</p>` : ""}
       <p class="by">${n.by === "claude" ? "Graded by Claude from every pitch" : "Graded from every pitch by the app's rules" + (d.claude ? "" : "; Claude grades once it's connected")}${n.stale ? " · update coming tonight" : ""}</p>
       ${coach() && d.claude && !S.viewAs ? `<button class="btn soft sm" data-act="grade-game" data-id="${esc(s.id)}" data-game="${esc(s.game)}"${st.writing ? " disabled" : ""}>${st.writing ? "Claude is grading…" : "Grade with Claude now"}</button>` : ""}
     </section>${ab}
-    <p class="seqkey"><span class="pn2 ball">1</span>ball <span class="pn2 called_strike">2</span>called strike <span class="pn2 swinging_strike">3</span>swing and miss <span class="pn2 foul">4</span>foul <span class="pn2 in_play">5</span>in play</p>
+    ${SEQKEY}
     ${s.back ? `<button class="btn soft wide" data-act="sheet" data-s="player" data-id="${esc(s.id)}">Back to ${esc(p.first || "player")}</button>` : ""}`];
 }
 
@@ -842,10 +925,10 @@ function gameSheet(s) {
 const PTC = { Fastball: "#E5484D", Sinker: "#F76B15", Cutter: "#A0522D", Slider: "#E2B007", Sweeper: "#C99700", Curveball: "#3E63DD", Changeup: "#30A46C", Splitter: "#12A594", Knuckleball: "#8E8C99" };
 const ptc = (t) => PTC[t] || "#8E8C99";
 const PP = {};
-function loadPitcher(seo, key) {
-  const k = S.team.team.id + "|" + seo + "|" + key;
-  if (!PP[k]) { PP[k] = { loading: true }; api("pitcher", { query: { team: S.team.team.id, seo, pitcher: key } }).then((d) => { PP[k] = { data: d }; }).catch((e) => { PP[k] = { error: e.code }; })
-    .finally(() => { if (S.sheet && S.sheet.kind === "pitcher" && S.sheet.key === key) renderSheet(false); }); }
+function loadPitcher(seo, key, season) {
+  const k = S.team.team.id + "|" + seo + "|" + key + (season ? "|" + season : "");
+  if (!PP[k]) { PP[k] = { loading: true }; api("pitcher", { query: { team: S.team.team.id, seo, pitcher: key, ...(season ? { season } : {}) } }).then((d) => { PP[k] = { data: d }; }).catch((e) => { PP[k] = { error: e.code }; })
+    .finally(() => { if (S.sheet && S.sheet.kind === "pitcher" && S.sheet.key === key) renderSheet(false); else if (S.view === "team" && S.tab === "search") renderPage(); }); }
   return PP[k];
 }
 function movementChart(points, arsenal) {
@@ -860,14 +943,14 @@ function movementChart(points, arsenal) {
 }
 const mixBar = (mix, types) => `<div class="mixbar">${types.map((t) => mix[t] ? `<span style="width:${mix[t]}%;background:${ptc(t)}" title="${esc(t)} ${mix[t]}%">${mix[t] >= 12 ? Math.round(mix[t]) : ""}</span>` : "").join("")}</div>`;
 function pitcherSheet(s) {
-  const st = loadPitcher(s.seo, s.key), d = st.data;
+  const st = loadPitcher(s.seo, s.key, s.season), d = st.data;
   if (!d) return ["Pitcher", st.error ? `<p class="muted">Couldn't load this pitcher.</p>` : `<div class="skel"></div><div class="skel short"></div>`];
   const L = d.line, types = (d.arsenal || []).map((a) => a.type);
   const tile = (l, v) => `<div><b>${esc(v ?? "–")}</b><span>${esc(l)}</span></div>`;
   const head = `<section class="card"><div class="hd"><div><b class="abt">${esc(d.team)} · ${d.throws ? esc(d.throws) + "HP" : "pitcher"} · ${L.starts >= L.apps / 2 ? "starter" : "reliever"}</b><span class="meta">${esc(d.season)} · ${L.apps} appearances, ${L.starts} starts</span></div></div>
     <div class="stats">${tile("Innings", L.ip)}${tile("Strikeouts", pc(L.kPct))}${tile("Walks", pc(L.bbPct))}${tile("Hits per 9", L.hPer9)}
       ${d.tracked ? tile("1st-pitch strikes", pc(d.firstPitchStrikePct)) + tile("In the zone", pc(d.zonePct)) + tile("Extension", d.extension != null ? d.extension + " ft" : null) + tile("Release height", d.releaseHeight != null ? d.releaseHeight + " ft" : null) : tile("Pitches per batter", L.pitchesPerBF) + tile("Home runs", L.hr)}</div></section>`;
-  if (!d.tracked) return [d.name, head + `<div class="note">Pitch types, velocity, spin, movement and location come with pitch tracking. With TrackMan connected, every opponent you've faced on a TrackMan field shows up here.</div>` + outingsCard(d) + facedCard(d)];
+  if (!d.tracked) return [d.name, head + `<div class="note">Pitch types, velocity, spin, movement and location come with pitch tracking. With TrackMan connected, every opponent you've faced on a TrackMan field shows up here.</div>` + (s.inline ? "" : outingsCard(d)) + facedCard(d)];
   const ars = `<section class="card"><div class="hd"><h3>Arsenal</h3><span class="muted small">${d.tracked.toLocaleString()} pitches</span></div><div class="tbl"><table class="ars"><thead><tr><th>Pitch</th><th>Use</th><th>Velo</th><th>Max</th><th>Spin</th><th>IVB</th><th>HB</th><th>Whiff</th><th>Chase</th><th>CSW</th><th>EV</th></tr></thead><tbody>
     ${d.arsenal.map((a) => `<tr><td><span class="ptd" style="background:${ptc(a.type)}"></span>${esc(a.type)}</td><td class="n">${pc(a.usage)}</td><td class="n">${a.velo ?? "–"}</td><td class="n">${a.maxVelo ?? "–"}</td><td class="n">${a.spin ?? "–"}</td><td class="n">${a.ivb ?? "–"}</td><td class="n">${a.hb ?? "–"}</td><td class="n">${pc(a.whiffPct)}</td><td class="n">${pc(a.chasePct)}</td><td class="n">${pc(a.cswPct)}</td><td class="n">${a.ev ?? "–"}</td></tr>`).join("")}
     </tbody></table></div><p class="small muted" style="margin:0">IVB and HB are induced vertical and horizontal break in inches (HB positive = arm side). Whiff is per swing, chase per pitch out of the zone, CSW is called plus swinging strikes per pitch, EV is exit velocity allowed.</p></section>`;
@@ -879,7 +962,7 @@ function pitcherSheet(s) {
   const loc = `<section class="card"><div class="hd"><h3>Where he throws it</h3></div>
     <div class="seg wrap">${["All", ...types].map((x) => `<button data-act="loc-type" data-v="${esc(x)}" aria-pressed="${locT === x}">${esc(x)}</button>`).join("")}</div>
     <div class="pics">${heatMap((d.locPoints || []).filter((p) => locT === "All" || p.t === locT), "share", locT === "All" ? "every pitch" : locT.toLowerCase() + "s")}${movementChart(d.movement, d.arsenal)}</div></section>`;
-  return [d.name, head + ars + counts + loc + outingsCard(d) + facedCard(d) + `<button class="btn soft noprint" data-act="print">Print or save as PDF</button>`];
+  return [d.name, head + ars + counts + loc + (s.inline ? "" : outingsCard(d)) + facedCard(d) + `<button class="btn soft noprint" data-act="print">Print or save as PDF</button>`];
 }
 function outingsCard(d) {
   return d.recent.length ? `<section class="card"><div class="hd"><h3>Recent outings</h3></div><div class="tbl"><table><thead><tr><th>Date</th><th>Opponent</th><th>IP</th><th>H</th><th>BB</th><th>K</th><th>Pitches</th></tr></thead><tbody>
@@ -1240,6 +1323,9 @@ const SHEETS = {
   },
   game: (s) => gameSheet(s),
   pitcher: (s) => pitcherSheet(s),
+  box: (s) => boxSheet(s),
+  xgame: (s) => xgameSheet(s),
+  xouting: (s) => xoutingSheet(s),
   gamelog: (s) => { const st = loadGames(s.id), p = playerById(s.id); return [`${p ? p.first + "'s" : "Game"} games`, st.data ? gameRows(st.data.games, s.id) : `<div class="skel"></div>`]; },
   "int-ftp": () => ftpSheet(),
   "int-live": () => ["TrackMan live feed", trackmanCard().replace(/^<section class="card"><div class="hd"><h3>TrackMan live feed<\/h3>/, '<section class="card"><div class="hd"><h3>Addresses</h3>')],
@@ -1286,7 +1372,7 @@ addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
 
 /* ---------- actions ---------- */
 document.addEventListener("change", (e) => {
-  if (e.target.dataset.sf) { S.sf[e.target.dataset.sf] = e.target.value; return renderPage(); }
+  if (e.target.dataset.sf) { const k = e.target.dataset.sf; S.sf[k] = e.target.value; if (k === "seo") Object.assign(S.sf, { who: "", season: "" }); if (k === "seo" || k === "who") Object.assign(S.sf, { type: "", count: "", result: "", hand: "" }); return renderPage(); }
   if (e.target.id !== "sc-opp") return;
   SC.opp = e.target.value; loadScout(SC.opp); renderPage();
 });
@@ -1308,6 +1394,7 @@ document.addEventListener("click", async (e) => {
     if (a === "teams") { closeSheet(true); S.viewAs = null; ls.set("oc-team", null); S.me = await api("me"); return showTeams(); }
     if (a === "sheet" && b.dataset.s === "pitcher") { S.locType = "All"; return openSheet("pitcher", { seo: b.dataset.seo, key: b.dataset.key }); }
     if (a === "loc-type") { S.locType = b.dataset.v; return renderSheet(false); }
+    if (a === "sheet" && ["box", "xgame", "xouting"].includes(b.dataset.s)) return openSheet(b.dataset.s, { seo: b.dataset.seo, key: b.dataset.key, game: b.dataset.game });
     if (a === "sheet" && b.dataset.s === "game") return openSheet("game", { id, game: b.dataset.game, back: !!(S.sheet && (S.sheet.kind === "player" || S.sheet.kind === "gamelog")) });
     if (a === "sheet") { if (b.dataset.s === "profile") S.pickPlayer = false; if (b.dataset.s === "int-ftp") S.ftpResult = null; return openSheet(b.dataset.s, { id }); }
     if (a === "close") return closeSheet();
@@ -1342,7 +1429,7 @@ document.addEventListener("click", async (e) => {
     if (a === "tm-rotate") { if (!confirm("Make new addresses? The old ones stop working, and TrackMan support will need the new ones.")) return; const d = await api("trackman", { method: "POST", query: { team: T, rotate: "1" } }); TMF[T] = { data: d }; toast("New addresses made"); return renderPage(); }
     if (a === "pd") { S.pd[b.dataset.k] = b.dataset.v; return S.sheet ? renderSheet(false) : renderPage(); }
     if (a === "sf-metric") { S.sf.metric = b.dataset.v; return renderPage(); }
-    if (a === "pd-search") { S.sf = { player: b.dataset.id, season: b.dataset.season, type: "", count: "", result: "", hand: "", metric: "swingPct" }; closeSheet(true); return selectTab("search"); }
+    if (a === "pd-search") { S.sf = { seo: S.team.team.ncaaSeo || "", who: "id:" + b.dataset.id, season: b.dataset.season, type: "", count: "", result: "", hand: "", metric: "swingPct" }; closeSheet(true); return selectTab("search"); }
     if (a === "print") { document.title = (S.sheet && S.sheet.kind === "pitcher" ? ((PP[S.team.team.id + "|" + S.sheet.seo + "|" + S.sheet.key] || {}).data || {}).name + " · scouting" : S.sheet && S.sheet.kind === "player" ? fullName(playerById(S.sheet.id) || { first: "Player", last: "" }) : "Scouting report") + " · " + S.team.team.name; const closed = [...document.querySelectorAll("details:not([open])")]; closed.forEach((x) => (x.open = true)); window.print(); closed.forEach((x) => (x.open = false)); document.title = APP_NAME; return; }
     if (a === "gs") { S.gs = Number(b.dataset.v); return renderPage(); }
     if (a === "grade-game") { loadGame(id, b.dataset.game, true); return renderSheet(false); }
