@@ -96,6 +96,12 @@ const SCHEMA = [
   `ALTER TABLE pitches ADD COLUMN IF NOT EXISTS hit_type text`,
   `ALTER TABLE pitches ADD COLUMN IF NOT EXISTS batter_name text`,
   `ALTER TABLE pitches ADD COLUMN IF NOT EXISTS pitcher_name text`,
+  // movement and release, inches / feet as TrackMan reports them (hb: positive = arm side for the pitcher)
+  `ALTER TABLE pitches ADD COLUMN IF NOT EXISTS ivb real`,
+  `ALTER TABLE pitches ADD COLUMN IF NOT EXISTS hb real`,
+  `ALTER TABLE pitches ADD COLUMN IF NOT EXISTS extension real`,
+  `ALTER TABLE pitches ADD COLUMN IF NOT EXISTS rel_height real`,
+  `CREATE INDEX IF NOT EXISTS pitches_pitcher_season ON pitches (pitch_seo, pitcher_key, season)`,
   // Season stats loaded from a report (e.g. a TrackMan season summary) rather than built from play-by-play.
   // line: the season line; by_pitch: rows per pitch type. Shown alongside play-by-play seasons.
   `CREATE TABLE IF NOT EXISTS player_seasons (

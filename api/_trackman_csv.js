@@ -72,6 +72,7 @@ export function trackmanPitches(text) {
     inning: col("Inning"), half: col("Top/Bottom", "TopBottom"), outs: col("Outs"), balls: col("Balls"), strikes: col("Strikes"),
     tagged: col("TaggedPitchType"), auto: col("AutoPitchType"), call: col("PitchCall"), korbb: col("KorBB"), hitType: col("TaggedHitType"), result: col("PlayResult"),
     velo: col("RelSpeed"), spin: col("SpinRate"), z: col("PlateLocHeight"), x: col("PlateLocSide"),
+    ivb: col("InducedVertBreak"), hb: col("HorzBreak"), ext: col("Extension"), relH: col("RelHeight"),
     ev: col("ExitSpeed"), la: col("Angle"), bearing: col("Bearing", "Direction"), distance: col("Distance"),
     gameId: col("GameID", "GameId"), uid: col("PitchUID"), home: col("HomeTeam"), away: col("AwayTeam"),
   };
@@ -92,6 +93,7 @@ export function trackmanPitches(text) {
       homeTeam: String(g(r, C.home) || "").trim() || null, awayTeam: String(g(r, C.away) || "").trim() || null,
       balls: int(g(r, C.balls)), strikes: int(g(r, C.strikes)), pitchType: pitchType(g(r, C.tagged), g(r, C.auto)), call,
       velo: num(g(r, C.velo)), spin: int(g(r, C.spin)), plateX: num(g(r, C.x)), plateZ: num(g(r, C.z)),
+      ivb: num(g(r, C.ivb)), hbRaw: num(g(r, C.hb)), extension: num(g(r, C.ext)), relHeight: num(g(r, C.relH)),
       ev: num(g(r, C.ev)), la: num(g(r, C.la)), bearing: num(g(r, C.bearing)), distance: num(g(r, C.distance)),
       hitType: String(g(r, C.hitType) || "").trim() || null, result,
     });

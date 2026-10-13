@@ -6,7 +6,7 @@ import { query } from "../api/_db.js";
 import { nameKey } from "../api/_ncaa.js";
 import { DEMO_LEAGUE } from "../api/_demo.js";
 
-export const DEMO_SEASON_VERSION = 4;
+export const DEMO_SEASON_VERSION = 5;
 const SEASONS = [2025, 2026];
 
 /* ---------- random numbers ---------- */
@@ -61,9 +61,10 @@ function makePitcher(role) {
     const fast = /Fastball|Sinker|Cutter/.test(t);
     const velo = t === "Fastball" ? fb : t === "Sinker" ? fb - 0.8 : t === "Cutter" ? fb - 4 : t === "Changeup" || t === "Splitter" ? fb - 8 : t === "Curveball" ? fb - 13 : fb - 10;
     const spin = t === "Fastball" ? normal(2250, 120) : t === "Sinker" ? normal(2100, 100) : t === "Curveball" ? normal(2450, 150) : /Slider|Sweeper|Cutter/.test(t) ? normal(2400, 150) : normal(1750, 120);
-    return { type: t, velo, spin: Math.round(spin), w: i === 0 ? 0.55 : fast ? 0.25 : 0.2, stuff: clamp(normal(fast ? 1 : 1.15, 0.12), 0.8, 1.5), breaking: !fast };
+    const MV = { Fastball: [16, 8], Sinker: [8, 15], Cutter: [10, -2], Slider: [1, -6], Sweeper: [0, -14], Curveball: [-12, -8], Changeup: [7, 13], Splitter: [3, 10], Knuckleball: [0, 0] }[t];
+    return { type: t, velo, spin: Math.round(spin), ivb: normal(MV[0], 2.2), hb: normal(MV[1], 2.2), w: i === 0 ? 0.55 : fast ? 0.25 : 0.2, stuff: clamp(normal(fast ? 1 : 1.15, 0.12), 0.8, 1.5), breaking: !fast };
   });
-  return { first: f, last: l, key: nameKey(l, f), throws, role, arsenal, command: clamp(normal(0.47, 0.05), 0.38, 0.58) };
+  return { first: f, last: l, key: nameKey(l, f), throws, role, arsenal, ext: clamp(normal(6.1, 0.35), 5.2, 7.2), relH: clamp(normal(5.8, 0.3), 5, 6.6), command: clamp(normal(0.47, 0.05), 0.38, 0.58) };
 }
 
 /* ---------- one plate appearance, pitch by pitch ---------- */
@@ -91,7 +92,7 @@ function plateAppearance(p, h) {
     const a = choosePitch(p, balls, strikes), loc = locate(p, a, balls, strikes, bats), z = inZone(loc);
     const velo = Math.round(normal(a.velo, 0.9) * 10) / 10, spin = Math.round(normal(a.spin, 60));
     const before = { balls, strikes };
-    const rec = { type: a.type, velo, spin, x: Math.round(loc.x * 100) / 100, z: Math.round(loc.z * 100) / 100, ...before };
+    const rec = { type: a.type, velo, spin, ivb: Math.round(normal(a.ivb, 1.4) * 10) / 10, hb: Math.round(normal(a.hb, 1.4) * 10) / 10, ext: Math.round(normal(p.ext, 0.08) * 100) / 100, relH: Math.round(normal(p.relH, 0.06) * 100) / 100, x: Math.round(loc.x * 100) / 100, z: Math.round(loc.z * 100) / 100, ...before };
     // hit by pitch: some balls well inside
     if (!z && rand() < 0.012) { pitches.push({ ...rec, call: "hbp" }); seq += "B"; return finish("HBP"); }
     const heart = Math.abs(loc.x) < 0.5 && loc.z > 1.9 && loc.z < 3.1;
@@ -252,9 +253,9 @@ export async function buildDemoSeasons({ roster, force = false, log = () => {} }
       await rows("ncaa_pitch_lines", ["game_id", "seo", "name", "display", "started", "bf", "outs", "h", "bb", "k", "hbp", "hr", "pitches"],
         s.lines.map((L) => [g.id, L.seo, L.p.key, `${L.p.first} ${L.p.last}`, L.started, L.bf, L.outs, L.h, L.bb, L.k, L.hbp, L.hr, L.pitches]));
       await rows("pitches", ["id", "game_id", "pa_idx", "pitch_no", "date", "season", "inning", "bat_seo", "pitch_seo", "batter_key", "pitcher_key", "batter_side", "pitcher_throws",
-        "balls", "strikes", "pitch_type", "velo", "spin", "plate_x", "plate_z", "call", "ev", "la", "bearing", "distance", "result", "source", "pa_ref", "hit_type", "batter_name", "pitcher_name"],
+        "balls", "strikes", "pitch_type", "velo", "spin", "plate_x", "plate_z", "call", "ev", "la", "bearing", "distance", "result", "source", "pa_ref", "hit_type", "batter_name", "pitcher_name", "ivb", "hb", "extension", "rel_height"],
         s.pitchRows.map((x, i) => [`${g.id}-${i + 1}`, g.id, x.idx, x.n, g.date, y, x.inning, x.bat, x.fld, x.h.key, x.p.key, x.bats, x.p.throws, x.balls, x.strikes, x.type, x.velo, x.spin, x.x, x.z, x.call,
-          x.ev ?? null, x.la ?? null, x.bearing ?? null, x.dist ?? null, x.last ? x.outcome : null, "demo", x.ref, x.bb ?? null, `${x.h.first} ${x.h.last}`, `${x.p.first} ${x.p.last}`]));
+          x.ev ?? null, x.la ?? null, x.bearing ?? null, x.dist ?? null, x.last ? x.outcome : null, "demo", x.ref, x.bb ?? null, `${x.h.first} ${x.h.last}`, `${x.p.first} ${x.p.last}`, x.ivb, x.hb, x.ext, x.relH]));
       nGames++; nPitches += s.pitchRows.length;
       if (nGames % 40 === 0) log(`  ${nGames} games, ${nPitches} pitches`);
     }

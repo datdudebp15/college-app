@@ -133,14 +133,15 @@ export async function importCsv(team, integ, text) {
     p.balls, p.strikes, p.pitchType, p.velo, p.spin, p.plateX, p.plateZ, p.call, p.ev, p.la, p.bearing, p.distance, p.result, "trackman",
     p.gameRef && p.inning != null ? `${p.gameRef}:${p.inning}${p.top ? "t" : "b"}:${p.paOfInning}` : null, p.hitType,
     p.batter ? `${p.batter.first} ${p.batter.last}`.trim() : null, p.pitcher ? `${p.pitcher.first} ${p.pitcher.last}`.trim() : null,
+    p.ivb, p.hbRaw == null ? null : p.pitcherThrows === "L" ? -p.hbRaw : p.hbRaw, p.extension, p.relHeight,
   ]);
   const cols = ["id", "game_id", "pa_idx", "pitch_no", "date", "season", "inning", "bat_seo", "pitch_seo", "batter_key", "pitcher_key", "batter_side", "pitcher_throws",
-    "balls", "strikes", "pitch_type", "velo", "spin", "plate_x", "plate_z", "call", "ev", "la", "bearing", "distance", "result", "source", "pa_ref", "hit_type", "batter_name", "pitcher_name"];
+    "balls", "strikes", "pitch_type", "velo", "spin", "plate_x", "plate_z", "call", "ev", "la", "bearing", "distance", "result", "source", "pa_ref", "hit_type", "batter_name", "pitcher_name", "ivb", "hb", "extension", "rel_height"];
   for (let s = 0; s < rows.length; s += 150) {
     const chunk = rows.slice(s, s + 150), params = [];
     const values = chunk.map((r) => "(" + r.map((v) => { params.push(v); return "$" + params.length; }).join(",") + ")").join(",");
     await query(`INSERT INTO pitches (${cols.join(",")}) VALUES ${values}
-      ON CONFLICT (id) DO UPDATE SET pitch_type = EXCLUDED.pitch_type, call = EXCLUDED.call, result = EXCLUDED.result, hit_type = EXCLUDED.hit_type,
+      ON CONFLICT (id) DO UPDATE SET pitch_type = EXCLUDED.pitch_type, ivb = EXCLUDED.ivb, hb = EXCLUDED.hb, call = EXCLUDED.call, result = EXCLUDED.result, hit_type = EXCLUDED.hit_type,
         game_id = EXCLUDED.game_id, bat_seo = EXCLUDED.bat_seo, pitch_seo = EXCLUDED.pitch_seo`, params);
   }
   return ps.length;

@@ -163,6 +163,10 @@ body.sheet-open #scrim{opacity:1;pointer-events:auto}
   display:flex;flex-direction:column;transform:translateY(105%);transition:transform var(--spring-d) var(--spring);will-change:transform}
 #sheet.glass{background:color-mix(in srgb,var(--card) 82%,transparent)}
 body.sheet-open #sheet{transform:translateY(0)}
+/* a closed sheet must never sit over the page: it would swallow clicks and scrolling */
+#sheet[hidden]{display:none!important}
+body:not(.sheet-open) #sheet{pointer-events:none}
+body:not(.sheet-open) #scrim{pointer-events:none}
 #sheet.drag{transition:none}
 @media (min-width:760px){#sheet{bottom:auto;top:50%;border-radius:30px;transform:translateY(-40%) scale(.92);opacity:0;transition:transform var(--spring-d) var(--spring),opacity .25s;max-height:86vh}
   body.sheet-open #sheet{transform:translateY(-50%);opacity:1}}
