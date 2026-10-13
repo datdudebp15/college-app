@@ -1,0 +1,18 @@
+{
+  "name": "offseason-college",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev-server.js",
+    "test": "node scripts/test.mjs"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.3.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
