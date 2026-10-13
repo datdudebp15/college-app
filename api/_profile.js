@@ -9,9 +9,29 @@ import { opponentStaff, likelyStarter, matchup } from "./_opponent.js";
 
 export async function playerProfile(team, p) {
   const seo = team.ncaa_seo;
-  if (!seo) return { ready: false, reason: "no_ncaa_team" };
-  const { keys, rows, seasons: out, prevSeo } = await hitterSeasons(team, p);
+  const imported = await importedSeasons(p);
+  if (!seo) return imported.length ? { ready: true, ncaaTeam: null, seasons: imported, lastGame: null, next: null, opponent: null, asOf: today() } : { ready: false, reason: "no_ncaa_team" };
+  const { keys, rows, seasons: built, prevSeo } = await hitterSeasons(team, p);
+  const out = [...built, ...imported.filter((s) => !built.some((b) => b.season === s.season))].sort((a, b) => b.season - a.season);
   return { ready: true, ncaaTeam: seo, prevSchool: p.prev_school, prevSeo, seasons: out, lastGame: lastGameOf(rows), ...(await nextAndOpponent(team, keys, out)), asOf: today() };
+}
+
+/** Seasons loaded from a report (player_seasons), in the same shape as play-by-play seasons; fields the report lacks are null. */
+export async function importedSeasons(p) {
+  const rows = await query(`SELECT * FROM player_seasons WHERE player_id = $1 ORDER BY season DESC`, [p.id]);
+  return rows.map((r) => ({ season: r.season, school: "import:" + r.school, schoolName: r.school, games: r.line.g ?? null, source: r.source, note: r.note,
+    metrics: lineToMetrics(r.line), team: null, flags: [], byPitch: r.by_pitch || null }));
+}
+function lineToMetrics(l) {
+  const n = (v) => (v == null || v === "" ? null : Number(v));
+  return {
+    pa: n(l.pa), ab: n(l.ab), h: n(l.h), d2: n(l.d2), d3: n(l.d3), hr: n(l.hr), bb: n(l.bb), hbp: n(l.hbp), k: n(l.k), kl: null,
+    avg: n(l.avg), obp: n(l.obp), slg: n(l.slg), ops: n(l.ops), iso: n(l.iso), woba: n(l.woba), xwoba: n(l.xwoba), babip: n(l.babip),
+    kPct: n(l.kPct), bbPct: n(l.bbPct), klShare: null, pitchesPerPA: null, swingPct: null, whiffPct: n(l.whiffPct), calledPct: null,
+    ballPct: n(l.ballPct), strikePct: n(l.strikePct), fpSwingPct: null, fpStrikePct: null,
+    twoStrike: { pa: 0, kPct: null, avg: null, foulsPerPA: null }, byCount: { ahead: { pa: 0, avg: null }, even: { pa: 0, avg: null }, behind: { pa: 0, avg: null } },
+    batted: { n: null, gbPct: n(l.gbPct), ldPct: null, fbPct: null, puPct: null }, direction: { n: 0, pullPct: null, centerPct: null, oppoPct: null, gbPullPct: null }, xbhPerBip: null,
+  };
 }
 
 /** A hitter's plate appearances and his numbers for each season and school. teamCache is shared across hitters. */

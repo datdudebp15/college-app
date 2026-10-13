@@ -258,6 +258,7 @@ details.more summary::-webkit-details-marker{display:none}
 table{border-collapse:collapse;width:100%;font-size:14px;min-width:480px}
 th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap} th{font-size:12px;color:var(--muted);font-weight:700}
 td.n{font-variant-numeric:tabular-nums}
+tr.total td{font-weight:800;border-top:1px solid var(--line)}
 tbody tr:last-child td{border-bottom:0}
 .skel{height:18px;border-radius:8px;background:linear-gradient(90deg,var(--fill-2),var(--fill),var(--fill-2));background-size:200% 100%;animation:shimmer 1.2s linear infinite}
 .skel.short{width:60%}
@@ -414,7 +415,7 @@ function renderPage(anim) {
   const titles = { today: "Today", scout: "Scouting", roster: "Roster", staff: "Staff", team: "Team", me: S.team.players[0] ? S.team.players[0].first : "Me", account: "Account" };
   topBar(left, `${titles[S.tab]} · ${short}`, `<span class="rgrp">${right}${profileBtn()}</span>`);
   const demo = (S.viewAs ? `<div class="note preview"><span>Previewing as <b>${esc(S.viewAs.name)}</b>. This is exactly what ${S.viewAs.role === "coach" ? "a coach" : "he"} sees. Read-only.</span><button class="btn sm" data-act="exit-preview">Exit</button></div>` : "")
-    + (team.demo ? `<div class="note">Demo team. Every player and coach here is fictional.</div>` : "");
+    + (team.demo ? `<div class="note">Demo team. ${(S.team.players || []).some((p) => p.realPerson) ? `Players are fictional except ${esc(S.team.players.filter((p) => p.realPerson).map(fullName).join(", "))}, whose real stats are here for a trial.` : "Every player and coach here is fictional."}</div>` : "");
   const body = { today: todayPage, scout: scoutPage, roster: rosterPage, staff: staffPage, team: teamPage, me: mePage, account: accountPage }[S.tab]();
   setPage(demo ? body.replace(/^(<div class="lt">[\s\S]*?<\/div>)/, `$1${demo}`) : body, anim);
 }
@@ -558,6 +559,21 @@ function seqChips(pa) {
   const inPlay = !/^(K|KL|KS|BB|IBB|HBP|CI)$/.test(pa.outcome);
   return `<span class="seq" aria-label="Pitches: ${[...pa.seq].map((c) => L[c][1]).join(", ")}${inPlay ? ", put in play" : ""}">${[...pa.seq].map((c) => `<i class="${L[c][0]}">${c}</i>`).join("")}${inPlay ? `<i class="x">X</i>` : ""}</span>`;
 }
+function seasonTiles(m, t) {
+  const tiles = [["AVG", f3(m.avg), t && f3(t.avg), m.avg], ["OBP", f3(m.obp), t && f3(t.obp), m.obp], ["SLG", f3(m.slg), t && f3(t.slg), m.slg],
+    ["wOBA", f3(m.woba), null, m.woba], ["xwOBA", f3(m.xwoba), null, m.xwoba], ["BABIP", f3(m.babip), null, m.babip],
+    ["Strikeouts", pc(m.kPct), t && pc(t.kPct), m.kPct], ["Walks", pc(m.bbPct), t && pc(t.bbPct), m.bbPct], ["Swing and miss", pc(m.whiffPct), t && pc(t.whiffPct), m.whiffPct],
+    ["Swings at 1st pitch", pc(m.fpSwingPct), t && pc(t.fpSwingPct), m.fpSwingPct], ["Ground balls", pc(m.batted.gbPct), t && pc(t.gbPct), m.batted.gbPct]].filter((x) => x[3] != null);
+  return `<div class="stats">${tiles.map(([l, v, tv]) => `<div><b>${esc(v)}</b><span>${esc(l)}</span>${tv ? `<small>Team ${esc(tv)}</small>` : ""}</div>`).join("")}</div>`;
+}
+// Pitch types he saw (from a TrackMan season summary): only the columns we know the meaning of are shown.
+function pitchTypeTable(rows) {
+  const known = [["seen", "Seen", (v) => v], ["share", "Share", (v) => pc(v)], ["velo", "Avg velo", (v) => (v == null ? "–" : Number(v).toFixed(1))]];
+  const extra = Object.keys(rows[0] || {}).filter((k) => !["type", "seen", "share", "velo", "raw"].includes(k));
+  const cols = [...known, ...extra.map((k) => [k, k, (v) => (v == null ? "–" : String(v))])];
+  return `<h4>Pitches he saw</h4><div class="tbl"><table><thead><tr><th>Pitch</th>${cols.map((c) => `<th>${esc(c[1])}</th>`).join("")}</tr></thead><tbody>
+    ${rows.map((r) => `<tr${r.type === "Overall" ? ' class="total"' : ""}><td>${esc(r.type)}</td>${cols.map(([k, , fmt]) => `<td class="n">${esc(fmt(r[k]))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
 function profileSections(id, self) {
   const st = loadProfile(id), d = st.data;
   if (!d) return st.error ? `<section class="card"><p class="muted" style="margin:0">Couldn't load ${self ? "your" : "his"} stats right now. Try again in a minute.</p></section>`
@@ -606,12 +622,12 @@ function profileSections(id, self) {
     const strengths = n ? n.strengths : cur.flags.filter((f) => f.sev === "good"), improve = n ? n.improve : cur.flags.filter((f) => f.sev === "bad" || f.sev === "warn");
     out.push(`<section class="card"><div class="hd"><h3>${esc(cur.season)} season</h3><span class="muted small">${esc(cur.schoolName)} · ${esc(cur.games)} games</span></div>
       ${n ? `<p style="margin:0">${esc(n.summary)}</p>` : ""}
-      <div class="stats">${[["AVG", f3(m.avg), f3(t.avg)], ["OBP", f3(m.obp), f3(t.obp)], ["SLG", f3(m.slg), f3(t.slg)], ["Strikeouts", pc(m.kPct), pc(t.kPct)], ["Walks", pc(m.bbPct), pc(t.bbPct)], ["Swing and miss", pc(m.whiffPct), pc(t.whiffPct)], ["Swings at 1st pitch", pc(m.fpSwingPct), pc(t.fpSwingPct)], ["Ground balls", pc(m.batted.gbPct), pc(t.gbPct)]]
-        .map(([l, v, tv]) => `<div><b>${esc(v)}</b><span>${esc(l)}</span><small>Team ${esc(tv)}</small></div>`).join("")}</div>
-      <p class="small muted" style="margin:0">${esc(m.pa)} plate appearances · ${esc(m.hr)} HR · ${esc(m.pitchesPerPA)} pitches per plate appearance. Strikeouts and walks are per plate appearance; swing and miss is per swing.</p>
+      ${seasonTiles(m, t)}
+      <p class="small muted" style="margin:0">${[m.pa != null ? m.pa + " plate appearances" : "", m.hr != null ? m.hr + " HR" : "", m.pitchesPerPA != null ? m.pitchesPerPA + " pitches per plate appearance" : ""].filter(Boolean).join(" · ")}. Strikeouts and walks are per plate appearance; swing and miss is per swing.</p>
+      ${cur.byPitch ? pitchTypeTable(cur.byPitch) : ""}
       ${strengths.length ? `<h4>What ${you} do${self ? "" : "es"} well</h4><div class="pats">${strengths.map((x) => pat(x, true)).join("")}</div>` : ""}
       ${improve.length ? `<h4>What to improve</h4><div class="pats">${improve.map((x) => pat(x, false)).join("")}</div>` : ""}
-      ${!strengths.length && !improve.length ? `<p class="muted small" style="margin:0">${m.pa < 40 ? `Not enough plate appearances yet to call anything a pattern.` : `Nothing stands out from the team averages.`}</p>` : ""}
+      ${!strengths.length && !improve.length ? `<p class="muted small" style="margin:0">${cur.source ? `From a ${esc(cur.source)}. Claude reads it and names strengths and what to improve once it's connected.` : m.pa < 40 ? `Not enough plate appearances yet to call anything a pattern.` : `Nothing stands out from the team averages.`}</p>` : ""}
       ${byLine(n)}</section>`);
   } else out.push(`<section class="card"><h3>Season</h3><p class="muted" style="margin:0">No college plate appearances found for ${self ? "you" : "him"} in the NCAA play-by-play yet.</p></section>`);
 

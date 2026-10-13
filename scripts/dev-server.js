@@ -33,6 +33,9 @@ const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", "
 await memoryDatabase(path.join(root, ".devdb"));
 await seedDemo(DEV_CODES);
 await createAdmin("Warren (local admin)", DEV_CODES.admin);
+const { loadTrialPlayers } = await import("./_trial.js");
+const trial = await loadTrialPlayers(path.join(root, "trial"));
+if (trial.length) console.log("  trial players on the demo team: " + trial.join(", "));
 
 http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://x");

@@ -96,6 +96,14 @@ const SCHEMA = [
   `ALTER TABLE pitches ADD COLUMN IF NOT EXISTS hit_type text`,
   `ALTER TABLE pitches ADD COLUMN IF NOT EXISTS batter_name text`,
   `ALTER TABLE pitches ADD COLUMN IF NOT EXISTS pitcher_name text`,
+  // Season stats loaded from a report (e.g. a TrackMan season summary) rather than built from play-by-play.
+  // line: the season line; by_pitch: rows per pitch type. Shown alongside play-by-play seasons.
+  `CREATE TABLE IF NOT EXISTS player_seasons (
+    player_id text NOT NULL REFERENCES players(id) ON DELETE CASCADE, season int NOT NULL, school text NOT NULL,
+    source text NOT NULL, line jsonb NOT NULL, by_pitch jsonb, note text, created_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (player_id, season, school)
+  )`,
+  `ALTER TABLE players ADD COLUMN IF NOT EXISTS real_person boolean NOT NULL DEFAULT false`,
   // A team's connected data sources. Secrets (logins) are sealed with INTEGRATIONS_KEY; config holds the rest.
   `CREATE TABLE IF NOT EXISTS integrations (
     team_id text NOT NULL REFERENCES teams(id) ON DELETE CASCADE, source text NOT NULL,
