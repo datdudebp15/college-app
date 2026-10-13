@@ -76,6 +76,9 @@ export default handler(async (req, res, user) => {
   }));
   const spray = (await query(`SELECT bearing, distance, ev, la, result, hit_type FROM pitches ${W ? W + " AND" : "WHERE"} call = 'in_play' AND bearing IS NOT NULL AND distance IS NOT NULL LIMIT 1500`, params))
     .map((p) => ({ b: p.bearing, d: Math.round(p.distance), ev: p.ev, la: p.la, hit: HIT.includes(p.result), hr: p.result === "HR" || p.result === "HomeRun", t: p.hit_type }));
+  // pitch locations for the smoothed heat map (a sample when there are many)
+  const points = (await query(`SELECT plate_x AS x, plate_z AS z, call, ev FROM pitches ${W ? W + " AND" : "WHERE"} plate_x IS NOT NULL ORDER BY md5(id) LIMIT 3000`, params))
+    .map((q) => ({ x: Math.round(q.x * 100) / 100, z: Math.round(q.z * 100) / 100, s: SWING.includes(q.call) ? 1 : 0, w: q.call === "swinging_strike" ? 1 : 0, ev: q.call === "in_play" && q.ev != null ? Math.round(q.ev) : null }));
   const limit = Math.min(500, Number(req.query.limit) || 150);
   const rows = (await query(`SELECT p.id, p.date, p.inning, p.balls, p.strikes, p.pitch_type, p.velo, p.call, p.ev, p.la, p.distance, p.result, p.pitcher_name, p.batter_name,
       p.pitcher_throws, p.video_url, p.plate_x, p.plate_z, g.home_seo, g.home_name, g.away_name
@@ -83,5 +86,5 @@ export default handler(async (req, res, user) => {
     ORDER BY p.date DESC, p.inning DESC, p.pa_ref DESC, p.pitch_no DESC LIMIT ${limit}`, params))
     .map((r) => ({ ...r, opponent: r.home_seo === seo ? r.away_name : r.home_name, home: r.home_seo === seo }));
   const types = (await query(`SELECT pitch_type, count(*)::int AS n FROM pitches ${W} GROUP BY 1 ORDER BY 2 DESC`, params)).filter((t) => t.pitch_type);
-  return res.json({ summary, grid, spray, rows, types, gridX: GX, gridZ: GZ });
+  return res.json({ summary, grid, points, spray, rows, types, gridX: GX, gridZ: GZ });
 });

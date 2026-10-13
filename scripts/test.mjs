@@ -255,6 +255,7 @@ await test("pitch search: filters, pictures, and players see only their own pitc
   const k = team.players.find((p) => p.last === "Kowalczyk"), a = team.players.find((p) => p.last === "Avery");
   const all = (await call("pitches", { code: COACH, query: { team: T, player: k.id, season: "2026" } })).body;
   assert.ok(all.summary.pitches > 300 && all.grid.length === 5 && all.spray.length > 50);
+  assert.ok(all.points.length > 300 && all.points.every((p) => typeof p.x === "number" && (p.s === 0 || p.s === 1)), "locations for the smooth heat map");
   const ch = (await call("pitches", { code: COACH, query: { team: T, player: k.id, season: "2026", result: "chase" } })).body;
   assert.ok(ch.summary.pitches > 0 && ch.summary.pitches < all.summary.pitches);
   const av = (await call("pitches", { code: COACH, query: { team: T, player: a.id, season: "2026" } })).body;

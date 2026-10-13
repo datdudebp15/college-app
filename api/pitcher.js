@@ -82,8 +82,10 @@ export default handler(async (req, res, user) => {
   const grid = (type) => { const xs = cells.filter((c) => !type || c.type === type), tot = xs.reduce((s, c) => s + c.n, 0);
     return Array.from({ length: 5 }, (_, row) => Array.from({ length: 5 }, (_, col) => { const c = xs.filter((x) => x.cx === col + 1 && x.cz === 5 - row).reduce((s, x) => s + x.n, 0); return { n: c, share: pct(c, tot) }; })); };
   const locations = { All: grid(null), ...Object.fromEntries(types.map((t) => [t, grid(t)])) };
+  const locPoints = (await query(`SELECT pitch_type AS t, plate_x AS x, plate_z AS z FROM pitches WHERE ${W} AND plate_x IS NOT NULL ORDER BY md5(id) LIMIT 3000`, P))
+    .map((r) => ({ t: r.t, x: Math.round(r.x * 100) / 100, z: Math.round(r.z * 100) / 100 }));
   const movement = (await query(`SELECT pitch_type AS t, ivb, hb FROM pitches WHERE ${W} AND ivb IS NOT NULL AND hb IS NOT NULL AND pitch_type IS NOT NULL ORDER BY random() LIMIT 450`, P))
     .map((m) => ({ t: m.t, v: Math.round(m.ivb * 10) / 10, h: Math.round(m.hb * 10) / 10 }));
   return res.json({ ...base, throws: S.throws, extension: r1(S.ext), releaseHeight: r1(S.rel), firstPitchStrikePct: pct(S.fps, S.fp), zonePct: pct(S.inz, n),
-    arsenal, byCount, vsHand, locations, movement });
+    arsenal, byCount, vsHand, locations, locPoints, movement });
 });

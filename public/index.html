@@ -225,6 +225,9 @@ details.more summary::-webkit-details-marker{display:none}
 /* pitch pictures */
 .pics{display:grid;grid-template-columns:1fr;gap:12px}
 @media (min-width:560px){.pics{grid-template-columns:1fr 1fr}}
+figure.heat.smooth{background:#fff;color:#111} figure.heat.smooth figcaption{color:#666}
+.heat .hl{font:800 14px var(--font);fill:#111} .heat .hs{font:700 10.5px var(--font);fill:#555}
+.heat .zone{fill:none;stroke:#111;stroke-width:2.6} .heat .shadow{fill:none;stroke:#111;stroke-width:1.3;stroke-dasharray:5 4;opacity:.75} .heat .plate{fill:#111;opacity:.85}
 figure.heat,figure.spray{margin:0;background:var(--card-2);border-radius:18px;padding:10px;color:var(--ink-2)}
 figure svg{width:100%;height:auto;display:block}
 figure figcaption{font-size:12px;color:var(--muted);font-weight:600;text-align:center;margin-top:4px;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 8px;align-items:center}
@@ -238,6 +241,11 @@ figure figcaption{font-size:12px;color:var(--muted);font-weight:600;text-align:c
 .prow+.prow{border-top:1px solid var(--line)}
 .prow .pt{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font:800 12px var(--mono);background:var(--accent-soft);color:var(--accent)}
 .prow b{display:block;font-size:14.5px} .prow .meta{font-size:12px;color:var(--muted)} .pres{text-align:right;display:flex;flex-direction:column;align-items:flex-end}
+/* scorebook chips */
+.sbc{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.sbc i{font:800 11.5px var(--mono);font-style:normal;padding:3px 6px;border-radius:6px;background:var(--fill);color:var(--ink-2)}
+.sbc i.h{background:var(--good-soft);color:var(--good)} .sbc i.w{background:var(--accent-soft);color:var(--accent)} .sbc i.k{background:var(--bad-soft);color:var(--bad)}
+.facedrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap} .facedrow .sbc{margin:0}
 /* pitcher page */
 .pname{appearance:none;border:0;background:none;padding:0;font:800 17px var(--font);letter-spacing:-.02em;color:var(--accent);text-align:left}
 .ars td:first-child{white-space:nowrap} .ptd{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
@@ -255,7 +263,8 @@ figure.mv{margin:0;background:var(--card-2);border-radius:18px;padding:10px}
 .grade.big{min-width:46px;height:46px;border-radius:15px;font-size:20px}
 .grade.gA{background:var(--good-soft);color:var(--good)} .grade.gB{background:var(--accent-soft);color:var(--accent)} .grade.gC{background:var(--fill);color:var(--ink-2)}
 .grade.gD{background:rgba(245,158,11,.16);color:var(--warn)} .grade.gF{background:var(--bad-soft);color:var(--bad)}
-.row.game{grid-template-columns:46px 1fr auto} .row.game .gl{font-size:13px;font-weight:700;color:var(--ink-2);text-align:right;white-space:nowrap}
+.row.game{grid-template-columns:40px 1fr auto}
+.wl{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;font:800 16px var(--font);background:var(--fill);color:var(--ink-2)} .wl.w{background:var(--good-soft);color:var(--good)} .wl.l{background:var(--bad-soft);color:var(--bad)} .row.game .gl{font-size:13px;font-weight:700;color:var(--ink-2);text-align:right;white-space:nowrap}
 .abt{display:block;font-weight:800;font-size:16px;letter-spacing:-.02em} .ab-card .meta{font-size:13px;color:var(--muted)}
 .abgrid{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:start}
 .mz{width:110px;height:auto;background:var(--card-2);border-radius:14px}
@@ -608,7 +617,7 @@ function mePage() {
 }
 
 /* ---------- pitch pictures ---------- */
-const HM = { share: ["Share of his pitches", "%", 0, 18], swingPct: ["Swing rate", "%", 0, 100], whiffPct: ["Misses per swing", "%", 0, 60], ev: ["Exit velo", " mph", 70, 100], hardPct: ["Hard-hit (95+)", "%", 0, 70] };
+const HM = { share: ["Where he throws it", "%", 0, 1], swingPct: ["Swing rate", "%", 0, 100], whiffPct: ["Misses per swing", "%", 0, 60], ev: ["Exit velo (mph)", "", 70, 100], hardPct: ["Hard-hit rate (95+ mph)", "%", 0, 70] };
 function heatColor(v, lo, hi) {
   if (v == null) return "var(--fill-2)";
   const f = Math.max(0, Math.min(1, (v - lo) / (hi - lo)));
@@ -616,16 +625,76 @@ function heatColor(v, lo, hi) {
   const a = [96, 125, 190], b = [255, 107, 61], mix = a.map((x, i) => Math.round(x + (b[i] - x) * f));
   return `rgba(${mix.join(",")},${0.25 + f * 0.6})`;
 }
-function heatMap(grid, metric) {
-  const [label, unit, lo, hi] = HM[metric], W = 50, H = 56;
-  const cells = grid.map((row, r) => row.map((c, k) => {
-    const v = c.n >= (metric === "share" ? 1 : 5) ? c[metric] : null, x = 10 + k * W, y = 10 + r * H;
-    return `<rect x="${x}" y="${y}" width="${W - 2}" height="${H - 2}" rx="7" fill="${heatColor(v, lo, hi)}"/><text x="${x + W / 2 - 1}" y="${y + H / 2 + 4}" text-anchor="middle" class="hv">${v == null ? "" : Math.round(v)}</text>`;
-  }).join("")).join("");
-  return `<figure class="heat"><svg viewBox="0 0 270 300" role="img" aria-label="${esc(label)} by location">${cells}
-    <rect x="${10 + W}" y="${10 + H}" width="${W * 3 - 2}" height="${H * 3 - 2}" fill="none" stroke="currentColor" stroke-width="2.5" rx="4" opacity=".75"/>
-    <path d="M110 ${10 + H * 5 + 8} h50 l-6 7 h-38 z" fill="currentColor" opacity=".35"/></svg>
-    <figcaption>${esc(label)}${unit === "%" ? " (%)" : ""} · catcher's view${metric === "share" ? "" : " · cells with 5+ pitches"}</figcaption></figure>`;
+// Smooth heat map: every pitch spreads into a soft (Gaussian) blob; the rate at each spot is the
+// blob-weighted average of nearby pitches, and spots with few pitches fade out so thin samples don't look hot.
+// Drawn once into an image (cached), with the strike zone, the shadow zone and home plate on top. Catcher's view.
+const HEAT_CACHE = new Map();
+const jet = (v) => { const c = (x) => Math.round(255 * Math.max(0, Math.min(1, x))); return [c(1.5 - Math.abs(4 * v - 3)), c(1.5 - Math.abs(4 * v - 2)), c(1.5 - Math.abs(4 * v - 1))]; };
+const HX0 = -1.75, HX1 = 1.75, HZ0 = 0.4, HZ1 = 4.6;
+function heatImage(points, metric) {
+  const [, , lo, hi] = HM[metric];
+  let sx = 0; for (const p of points) sx += p.x * 7 + p.z * 13;
+  const key = metric + "|" + points.length + "|" + sx.toFixed(2);
+  if (HEAT_CACHE.has(key)) return HEAT_CACHE.get(key);
+  // which pitches count, and the value each carries
+  const pick = { swingPct: [() => true, (p) => p.s * 100], whiffPct: [(p) => p.s, (p) => p.w * 100], ev: [(p) => p.ev != null, (p) => p.ev], hardPct: [(p) => p.ev != null, (p) => (p.ev >= 95 ? 100 : 0)], share: [() => true, () => 1] }[metric];
+  const pts = points.filter(pick[0]);
+  const GW = 70, GH = 84, bw = metric === "ev" || metric === "hardPct" ? 0.3 : 0.24, cut = (3 * bw) ** 2, k2 = 1 / (2 * bw * bw);
+  // bucket pitches so each cell only looks at its neighbors
+  const B = 3 * bw, buckets = new Map(), bkey = (i, j) => i * 1000 + j;
+  for (const p of pts) { const i = Math.floor(p.x / B), j = Math.floor(p.z / B), kk = bkey(i, j); if (!buckets.has(kk)) buckets.set(kk, []); buckets.get(kk).push(p); }
+  const val = pick[1], num = new Float32Array(GW * GH), den = new Float32Array(GW * GH);
+  let maxDen = 0;
+  for (let gy = 0; gy < GH; gy++) for (let gx = 0; gx < GW; gx++) {
+    const x = HX0 + ((gx + 0.5) / GW) * (HX1 - HX0), z = HZ1 - ((gy + 0.5) / GH) * (HZ1 - HZ0);
+    const bi = Math.floor(x / B), bj = Math.floor(z / B);
+    let n = 0, d = 0;
+    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) {
+      const list = buckets.get(bkey(bi + di, bj + dj)); if (!list) continue;
+      for (const p of list) { const dx = p.x - x, dz = p.z - z, r2 = dx * dx + dz * dz; if (r2 > cut) continue; const w = Math.exp(-r2 * k2); n += w * val(p); d += w; }
+    }
+    num[gy * GW + gx] = n; den[gy * GW + gx] = d; if (d > maxDen) maxDen = d;
+  }
+  const c = document.createElement("canvas"); c.width = GW; c.height = GH;
+  const ctx = c.getContext("2d"), img = ctx.createImageData(GW, GH);
+  // fade by sample size: rates need a few pitches nearby; location share fades by its own density
+  const need = metric === "share" ? maxDen * 0.35 : Math.max(1.2, maxDen * 0.12);
+  for (let i = 0; i < GW * GH; i++) {
+    const d = den[i]; if (!d) continue;
+    const v = metric === "share" ? d / maxDen : Math.max(0, Math.min(1, (num[i] / d - lo) / (hi - lo)));
+    const [r, g, b] = jet(v);
+    img.data[i * 4] = r; img.data[i * 4 + 1] = g; img.data[i * 4 + 2] = b;
+    img.data[i * 4 + 3] = Math.round(255 * Math.min(1, d / need) * 0.92);
+  }
+  ctx.putImageData(img, 0, 0);
+  // upscale smoothly
+  const big = document.createElement("canvas"); big.width = GW * 4; big.height = GH * 4;
+  const bctx = big.getContext("2d"); bctx.imageSmoothingEnabled = true; bctx.imageSmoothingQuality = "high"; bctx.filter = "blur(3px)"; bctx.drawImage(c, 0, 0, big.width, big.height);
+  const url = big.toDataURL("image/png");
+  if (HEAT_CACHE.size > 60) HEAT_CACHE.clear();
+  HEAT_CACHE.set(key, url);
+  return url;
+}
+function heatMap(points, metric, note) {
+  const [label, unit, lo, hi] = HM[metric];
+  points = points || [];
+  const W = 280, H = 336, X = (x) => ((x - HX0) / (HX1 - HX0)) * W, Z = (z) => ((HZ1 - z) / (HZ1 - HZ0)) * H;
+  const enough = points.length >= 15;
+  const img = enough ? heatImage(points, metric) : null;
+  const bar = Array.from({ length: 24 }, (_, i) => { const [r, g, b] = jet(i / 23); return `<rect x="${(W - 170) / 2 + i * (170 / 24)}" y="8" width="${170 / 24 + 0.5}" height="9" fill="rgb(${r},${g},${b})"/>`; }).join("");
+  const fmt = (v) => (unit === "%" ? Math.round(v) + "%" : Math.round(v) + "");
+  const sz = 0.2; // shadow zone: about a ball's width outside the zone
+  return `<figure class="heat smooth"><svg viewBox="0 -26 ${W} ${H + 44}" role="img" aria-label="${esc(label)} by location">
+    ${metric === "share" ? `<text x="${W / 2}" y="-8" text-anchor="middle" class="hl">${esc(label)}</text><text x="${(W - 170) / 2}" y="28" class="hs">less</text><text x="${(W + 170) / 2}" y="28" text-anchor="end" class="hs">more</text>`
+      : `<text x="${W / 2}" y="-8" text-anchor="middle" class="hl">${esc(label)}</text><text x="${(W - 170) / 2}" y="28" class="hs">${fmt(lo)}</text><text x="${W / 2}" y="28" text-anchor="middle" class="hs">${fmt((lo + hi) / 2)}</text><text x="${(W + 170) / 2}" y="28" text-anchor="end" class="hs">${fmt(hi)}+</text>`}
+    ${bar}
+    <g transform="translate(0,36)">
+      ${img ? `<image href="${img}" x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="none"/>` : `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" class="hs">Not enough pitches yet</text>`}
+      <rect x="${X(-0.83 - sz)}" y="${Z(3.5 + sz)}" width="${X(0.83 + sz) - X(-0.83 - sz)}" height="${Z(1.5 - sz) - Z(3.5 + sz)}" class="shadow"/>
+      <rect x="${X(-0.83)}" y="${Z(3.5)}" width="${X(0.83) - X(-0.83)}" height="${Z(1.5) - Z(3.5)}" class="zone"/>
+      <path d="M${X(-0.71)} ${H - 14} h${X(0.71) - X(-0.71)} l-10 9 h${-(X(0.71) - X(-0.71) - 20)} z" class="plate"/>
+    </g></svg>
+    <figcaption>Catcher's view${note ? " · " + esc(note) : ""}</figcaption></figure>`;
 }
 function sprayChart(points) {
   const S = 0.52, cx = 150, cy = 236, pt = (b, d) => [cx + d * S * Math.sin((b * Math.PI) / 180), cy - d * S * Math.cos((b * Math.PI) / 180)];
@@ -662,7 +731,7 @@ function pitchCard(id, season) {
     ${seg("type", st.type, [["", "All"], ["fast", "Fastballs"], ["breaking", "Breaking"], ["offspeed", "Off-speed"]])}
     ${pitchSummary(d.summary)}
     ${seg("metric", st.metric, [["swingPct", "Swing"], ["whiffPct", "Miss"], ["ev", "Exit velo"], ["hardPct", "Hard-hit"]])}
-    <div class="pics">${heatMap(d.grid, st.metric)}${d.spray.length ? sprayChart(d.spray) : ""}</div>
+    <div class="pics">${heatMap(d.points, st.metric)}${d.spray.length ? sprayChart(d.spray) : ""}</div>
     <button class="btn soft" data-act="pd-search" data-id="${esc(id)}" data-season="${esc(season)}">See every pitch</button></section>`;
 }
 
@@ -688,7 +757,7 @@ function searchPage() {
       <span><b>${esc(p.pitch_type || "Pitch")} ${p.velo ? esc(p.velo.toFixed(1)) : ""}</b><span class="meta">${esc(gameDay(p.date))} ${p.home ? "vs" : "at"} ${esc(p.opponent || "")} · ${esc(ordinal(p.inning))} · ${p.balls}-${p.strikes}${coach() && !f.player ? " · " + esc(p.batter_name || "") : ""} · ${esc(p.pitcher_name || "")} (${esc(p.pitcher_throws || "?")})</span></span>
       <span class="pres"><b>${esc(p.result && p.call === "in_play" ? OUTC[p.result] || p.result : CALL[p.call] || p.call)}</b>${p.ev ? `<span class="meta">${p.ev.toFixed(0)} mph · ${Math.round(p.la)}°${p.distance ? " · " + Math.round(p.distance) + " ft" : ""}</span>` : ""}${p.video_url ? `<a class="link" href="${esc(p.video_url)}" target="_blank" rel="noopener">Video</a>` : ""}</span></div>`).join("")}</div>`;
   return lt(coach() ? "Search" : "Your pitches", d.rows.length < d.summary.pitches ? `Newest ${d.rows.length} of ${d.summary.pitches} pitches` : `${d.summary.pitches} pitches`) + filters
-    + `<section class="card">${pitchSummary(d.summary)}${seg}<div class="pics">${heatMap(d.grid, f.metric)}${d.spray.length ? sprayChart(d.spray) : ""}</div></section>`
+    + `<section class="card">${pitchSummary(d.summary)}${seg}<div class="pics">${heatMap(d.points, f.metric)}${d.spray.length ? sprayChart(d.spray) : ""}</div></section>`
     + `<section class="card"><div class="hd"><h3>Pitches</h3><span class="muted small">newest first</span></div>${list}</section>`;
 }
 const ordinal = (n) => n + (n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th");
@@ -705,7 +774,7 @@ const gradeChip = (g) => g ? `<span class="grade g${esc(g[0])}">${esc(g)}</span>
 function lineText(l) { return [`${l.h}-for-${l.ab}`, ...l.xbh, l.bb ? (l.bb > 1 ? l.bb + " BB" : "BB") : "", l.hbp ? "HBP" : "", l.k ? (l.k > 1 ? l.k + " K" : "K") : ""].filter(Boolean).join(" · "); }
 function gameRows(games, pid) {
   return `<div class="list inset">${games.map((g) => `<button class="row game" data-act="sheet" data-s="game" data-id="${esc(pid)}" data-game="${esc(g.id)}">
-    ${gradeChip(g.grade).replace('class="grade', 'class="grade big')}<span><b>${g.home ? "vs" : "at"} ${esc(g.opponent)}</b><span class="meta">${esc(gameDay(g.date))} · ${g.us > g.them ? "W" : g.us < g.them ? "L" : "T"} ${g.us}-${g.them}</span></span>
+    <span class="wl ${g.us > g.them ? "w" : g.us < g.them ? "l" : "t"}">${g.us > g.them ? "W" : g.us < g.them ? "L" : "T"}</span><span><b>${g.home ? "vs" : "at"} ${esc(g.opponent)}</b><span class="meta">${esc(gameDay(g.date))} · ${g.us}-${g.them}</span></span>
     <span class="gl">${esc(lineText(g.line))}</span></button>`).join("")}</div>`;
 }
 function gamesPage(pid) {
@@ -716,14 +785,14 @@ function gamesPage(pid) {
   const seasons = [...new Set(d.games.map((g) => g.season))];
   S.gs = seasons.includes(S.gs) ? S.gs : seasons[0];
   const seg = seasons.length > 1 ? `<div class="seg">${seasons.map((y) => `<button data-act="gs" data-v="${y}" aria-pressed="${S.gs === y}">${y}</button>`).join("")}</div>` : "";
-  return lt("Games", "Every at-bat graded on your approach, not the result") + seg + gameRows(d.games.filter((g) => g.season === S.gs), pid);
+  return lt("Games", "Tap a game to see every at-bat") + seg + gameRows(d.games.filter((g) => g.season === S.gs), pid);
 }
 function gameLogCard(pid) {
   const st = loadGames(pid), d = st.data;
   if (!d) return `<section class="card"><h3>Game log</h3><div class="skel"></div></section>`;
   if (!d.games.length) return "";
   return `<section class="card"><div class="hd"><h3>Game log</h3><span class="muted small">${d.games.length} games</span></div>
-    <p class="small muted" style="margin:0">Each at-bat graded on process: swing decisions and contact, not the result.</p>
+    
     ${gameRows(d.games.slice(0, 6), pid)}${d.games.length > 6 ? `<button class="btn soft" data-act="sheet" data-s="gamelog" data-id="${esc(pid)}">All ${d.games.length} games</button>` : ""}</section>`;
 }
 const GD = {};
@@ -799,7 +868,7 @@ function pitcherSheet(s) {
   const locT = S.locType && d.locations[S.locType] ? S.locType : "All";
   const loc = `<section class="card"><div class="hd"><h3>Where he throws it</h3></div>
     <div class="seg wrap">${["All", ...types].map((x) => `<button data-act="loc-type" data-v="${esc(x)}" aria-pressed="${locT === x}">${esc(x)}</button>`).join("")}</div>
-    <div class="pics">${heatMap(d.locations[locT], "share")}${movementChart(d.movement, d.arsenal)}</div></section>`;
+    <div class="pics">${heatMap((d.locPoints || []).filter((p) => locT === "All" || p.t === locT), "share", locT === "All" ? "every pitch" : locT.toLowerCase() + "s")}${movementChart(d.movement, d.arsenal)}</div></section>`;
   return [d.name, head + ars + counts + loc + outingsCard(d) + facedCard(d) + `<button class="btn soft noprint" data-act="print">Print or save as PDF</button>`];
 }
 function outingsCard(d) {
@@ -807,7 +876,7 @@ function outingsCard(d) {
     ${d.recent.map((o) => `<tr><td>${esc(gameDay(o.date))}${o.started ? " ·&nbsp;S" : ""}</td><td>${esc(o.opponent)}</td><td class="n">${o.ip}</td><td class="n">${o.h}</td><td class="n">${o.bb}</td><td class="n">${o.k}</td><td class="n">${o.pitches || "–"}</td></tr>`).join("")}</tbody></table></div></section>` : "";
 }
 function facedCard(d) {
-  return d.faced.length ? `<section class="card"><div class="hd"><h3>Your hitters against him</h3></div><div class="list inset">${d.faced.map((f) => `<div class="row" style="cursor:default"><span class="num">${esc(initials(f.name))}</span><span><b>${esc(f.name)}</b><span class="meta">${esc(f.outcomes.map((o) => OUTC[o] || o).join(", "))}</span></span><span class="chip">${f.outcomes.filter((o) => /^(1B|2B|3B|HR)$/.test(o)).length}-for-${f.outcomes.filter((o) => !/^(BB|IBB|HBP|SF|SH)$/.test(o)).length}</span></div>`).join("")}</div></section>` : "";
+  return d.faced.length ? `<section class="card"><div class="hd"><h3>Your hitters against him</h3></div><div class="list inset">${d.faced.map((f) => `<div class="row" style="cursor:default"><span class="num">${esc(initials(f.name))}</span><span><b>${esc(f.name)}</b>${abChips(f.outcomes)}</span><span class="chip">${f.outcomes.filter((o) => /^(1B|2B|3B|HR)$/.test(o)).length}-for-${f.outcomes.filter((o) => !/^(BB|IBB|HBP|SF|SH)$/.test(o)).length}</span></div>`).join("")}</div></section>` : "";
 }
 
 /* ---------- player profile: next game, opponent, last game, season, year over year ---------- */
@@ -824,6 +893,10 @@ function loadProfile(id, write) {
 }
 const OUTC = { KL: "Struck out looking", KS: "Struck out swinging", K: "Struck out", BB: "Walk", IBB: "Intentional walk", HBP: "Hit by pitch", "1B": "Single", "2B": "Double", "3B": "Triple", HR: "Home run",
   GO: "Ground out", GDP: "Grounded into double play", FO: "Fly out", LO: "Line out", PO: "Pop up", FFO: "Foul out", SF: "Sacrifice fly", SH: "Sacrifice bunt", FC: "Fielder's choice", ROE: "Reached on error", CI: "Catcher's interference", LDP: "Lined into double play", FDP: "Flied into double play", DP: "Double play", RE: "Reached", OUT: "Out" };
+// scorebook notation for result lists: K swinging, ꓘ (backwards K) looking
+const SB = { KS: "K", K: "K", KL: "ꓘ", BB: "BB", IBB: "IBB", HBP: "HBP", "1B": "1B", "2B": "2B", "3B": "3B", HR: "HR", GO: "GO", GDP: "GDP", FO: "FO", LO: "LO", PO: "PO", FFO: "FO", SF: "SF", SH: "SAC", FC: "FC", ROE: "E", CI: "CI", LDP: "DP", FDP: "DP", DP: "DP", RE: "ROB", OUT: "OUT" };
+const sbClass = (o) => (/^(1B|2B|3B|HR)$/.test(o) ? "h" : /^(BB|IBB|HBP|CI)$/.test(o) ? "w" : /^K/.test(o) ? "k" : "o");
+const abChips = (outcomes) => `<span class="sbc">${outcomes.map((o) => `<i class="${sbClass(o)}" title="${esc(OUTC[o] || o)}">${esc(SB[o] || o)}</i>`).join("")}</span>`;
 const HITS = new Set(["1B", "2B", "3B", "HR"]), ONBASE = new Set(["BB", "IBB", "HBP", "1B", "2B", "3B", "HR", "ROE", "CI"]);
 const f3 = (x) => (x == null ? "–" : Number(x).toFixed(3).replace(/^0/, "")), pc = (x) => (x == null ? "–" : Math.round(x) + "%");
 const byLine = (n) => n ? `<p class="by">${n.by === "claude" ? "Written by Claude from the numbers" : "From the numbers"}${n.stale ? " · update coming tonight" : ""}</p>` : "";
@@ -870,7 +943,7 @@ function profileSections(id, self) {
       ${s.why ? `<p class="small muted" style="margin:0">${esc(s.why[0].toUpperCase() + s.why.slice(1))}.</p>` : ""}
       <div class="mini">${[["IP", s.ip], ["K%", pc(s.kPct)], ["BB%", pc(s.bbPct)], ["1st-pitch strike", pc(s.fpStrikePct)], ["Whiff", pc(s.whiffPct)], ["Ground balls", pc(s.gbPct)]].map(([l, v]) => `<span><b>${esc(v)}</b>${esc(l)}</span>`).join("")}</div>
       ${attack(s.name) ? `<p style="margin:0">${esc(attack(s.name).attack)}</p>` : s.notes.length ? `<p style="margin:0">${esc(s.notes.join(" "))}</p>` : ""}
-      ${s.faced && s.faced.length ? `<p class="small muted" style="margin:0">${self ? "You've" : "He's"} faced him ${s.faced.length} time${s.faced.length === 1 ? "" : "s"}: ${esc(s.faced.map((f) => (OUTC[f.outcome] || f.outcome).toLowerCase()).join(", "))}.</p>` : ""}</div>`;
+      ${s.faced && s.faced.length ? `<p class="small muted facedrow" style="margin:0">${self ? "You vs him" : "Him"}: ${abChips(s.faced.map((f) => f.outcome))}</p>` : ""}</div>`;
     out.push(`<section class="card"><div class="hd"><h3>${esc(o.name)} pitchers</h3></div>
       ${N.opponent ? `<p style="margin:0">${esc(N.opponent.overview)}</p>` : ""}
       ${o.starter ? pcard(o.starter) : ""}${o.bullpen.map(pcard).join("")}
@@ -991,7 +1064,7 @@ function scoutPage() {
     const card = (p, tag) => `<div class="pitcher"><div class="ph"><button class="pname" data-act="sheet" data-s="pitcher" data-seo="${esc(d.opponent.seo)}" data-key="${esc(p.key)}">${esc(p.name)} ›</button><span class="chip${p.day ? " invited" : ""}">${esc(tag)}</span></div>
       <div class="mini">${[["IP", p.ip], ["K%", pc(p.kPct)], ["BB%", pc(p.bbPct)], ["1st-pitch strike", pc(p.fpStrikePct)], ["Whiff", pc(p.whiffPct)], ["Ground balls", pc(p.gbPct)]].map(([l, v]) => `<span><b>${esc(v)}</b>${esc(l)}</span>`).join("")}</div>
       ${(p.tendencies || []).length ? `<ul class="tend">${p.tendencies.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
-      ${p.hitters.length ? `<div class="mu">${p.hitters.map((h) => `<button class="murow" data-act="sheet" data-s="player" data-id="${esc(h.id)}"><b>${esc(h.name)}</b>${h.notes.length ? `<span>${esc(h.notes.join(" "))}</span>` : ""}${h.faced.length ? `<span class="muted">Faced him: ${esc(h.faced.map((o) => (OUTC[o] || o).toLowerCase()).join(", "))}</span>` : ""}</button>`).join("")}</div>` : (p.tendencies || []).length ? "" : `<p class="small muted" style="margin:0">Nothing stands out against your hitters.</p>`}</div>`;
+      ${p.hitters.length ? `<div class="mu">${p.hitters.map((h) => `<button class="murow" data-act="sheet" data-s="player" data-id="${esc(h.id)}"><b>${esc(h.name)}</b>${h.notes.length ? `<span>${esc(h.notes.join(" "))}</span>` : ""}${h.faced.length ? abChips(h.faced) : ""}</button>`).join("")}</div>` : (p.tendencies || []).length ? "" : `<p class="small muted" style="margin:0">Nothing stands out against your hitters.</p>`}</div>`;
     const sec = (title, xs, tag) => xs.length ? `<section class="card"><div class="hd"><h3>${title}</h3></div>${xs.map((p) => card(p, tag(p))).join("")}</section>` : "";
     body = `<section class="card"><div class="nextline"><b>${esc(d.opponent.name)}</b><span>${d.next ? "Next: " + esc(gameDay(d.next.date)) : esc(d.season) + " season"}</span></div>
         <div class="actions noprint"><button class="btn sm soft" data-act="print">Print or save as PDF</button></div>
