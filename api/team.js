@@ -26,7 +26,7 @@ export default handler(async (req, res, user, body) => {
 
   if (req.method === "GET") {
     const t = await one(`SELECT * FROM teams WHERE id = $1`, [teamId]);
-    const team = { id: t.id, name: t.name, shortName: t.short_name, season: t.season, demo: t.demo };
+    const team = { id: t.id, name: t.name, shortName: t.short_name, season: t.season, demo: t.demo, rosterUrl: t.roster_url };
     if (!isCoach(me)) {
       const p = await one(`SELECT * FROM players WHERE id = $1 AND team_id = $2`, [me.playerId, teamId]);
       return res.json({ team, me, players: p ? [player(p)] : [], staff: null });

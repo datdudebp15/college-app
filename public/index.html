@@ -217,7 +217,7 @@ const ls = { get: (k) => { try { return localStorage.getItem(k); } catch { retur
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const POS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "OF", "IF", "UT", "DH", "P"];
 const CLASS = ["Fr", "So", "Jr", "Sr", "Gr", "RS Fr", "RS So", "RS Jr", "RS Sr"];
-const ERR = { name: "First and last name are needed.", last_coach: "A team needs at least one coach.", coach_only: "Only coaches can do that.", season: "Season should be a year, like 2026.", missing: "Fill in the team, season and head coach.", no_database: "The database isn't connected yet.", server: "Something went wrong. Try again." };
+const ERR = { name: "First and last name are needed.", last_coach: "A team needs at least one coach.", coach_only: "Only coaches can do that.", season: "Season should be a year, like 2026.", missing: "Fill in the team, season and head coach.", no_database: "The database isn't connected yet.", bad_url: "That doesn't look like a public roster page. Paste the full https:// link.", not_roster: "That link isn't a roster page. Open your team's roster on the school site and copy that link.", unsupported_site: "That school's site isn't supported yet. Add players by hand for now.", no_roster: "No players found on that page.", fetch_failed: "Couldn't open that page. Check the link and try again.", server: "Something went wrong. Try again." };
 const I = {
   back: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
   x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
@@ -249,7 +249,7 @@ document.addEventListener("pointermove", (e) => {
   const g = e.target.closest && e.target.closest(".glass"); if (!g) return;
   const r = g.getBoundingClientRect(); g.style.setProperty("--mx", ((e.clientX - r.left) / r.width * 100) + "%"); g.style.setProperty("--my", ((e.clientY - r.top) / r.height * 100) + "%");
 }, { passive: true });
-const haptic = () => { try { navigator.vibrate && navigator.vibrate(8); } catch {} };
+const haptic = () => { try { if (navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) navigator.vibrate(8); } catch {} };
 
 /* ---------- api ---------- */
 async function api(name, { method = "GET", query = {}, body } = {}) {
@@ -343,7 +343,7 @@ function rosterPage() {
   return lt("Roster", `${esc(t.name)} · ${esc(t.season)} · ${P.length} players, ${signed} with sign-in`) +
     (P.length ? `<div class="list">${P.map((p) => `<button class="row" data-act="sheet" data-s="player" data-id="${esc(p.id)}"><span class="num">${esc(p.jersey ?? "–")}</span>
       <span><b>${esc(fullName(p))}</b><span class="meta">${esc([p.pos, p.classYear, p.bats && p.throws ? `B/T ${p.bats}/${p.throws}` : ""].filter(Boolean).join(" · "))}</span></span>${accessChip(p.access)}</button>`).join("")}</div>`
-      : `<div class="list"><p class="empty">No players yet.</p></div><button class="btn" data-act="sheet" data-s="add">Add your first player</button>`);
+      : `<div class="list"><p class="empty">No players yet.</p></div><button class="btn" data-act="sheet" data-s="import">Import from your school's site</button><button class="btn soft" data-act="sheet" data-s="add">Add a player by hand</button>`);
 }
 function staffPage() {
   const st = S.team.staff;
@@ -355,7 +355,9 @@ function teamPage() {
   const t = S.team.team;
   return lt("Team", "") + `<section class="card"><div class="hd"><h3>${esc(t.name)}</h3><button class="link" data-act="sheet" data-s="editteam">Edit</button></div>
       <div class="stats"><div><b>${esc(t.season)}</b><span>Season</span></div><div><b>${S.team.players.length}</b><span>Players</span></div>
-      <div><b>${S.team.staff.length}</b><span>Coaches</span></div><div><b>${S.team.players.filter((p) => p.access === "active").length}</b><span>Players signed in</span></div></div></section>` + accountCard();
+      <div><b>${S.team.staff.length}</b><span>Coaches</span></div><div><b>${S.team.players.filter((p) => p.access === "active").length}</b><span>Players signed in</span></div></div></section>
+    <section class="card"><div class="hd"><h3>Roster from your school's site</h3></div><p class="muted" style="margin:0">${t.rosterUrl ? `Last imported from ${esc(new URL(t.rosterUrl).hostname)}. Import again to pick up new numbers, positions and classes.` : "Bring in your hitters with their numbers, positions, classes and bats/throws."}</p>
+      <button class="btn soft" data-act="sheet" data-s="import">${t.rosterUrl ? "Import again" : "Import roster"}</button></section>` + accountCard();
 }
 function accountCard() {
   return `<section class="card"><div class="hd"><h3>Signed in as ${esc(S.me.user.name)}</h3></div>
@@ -495,6 +497,10 @@ const SHEETS = {
       <p class="muted" style="margin:0">A new code turns the old one off.</p><button class="btn soft" data-act="scode" data-id="${esc(c.id)}">Make a new code</button></section>
       ${S.team.staff.length > 1 ? `<section class="card"><h3>Remove from staff</h3><div class="actions">${S.confirm === c.id ? `<button class="btn danger" data-act="sdel" data-id="${esc(c.id)}">Remove ${esc(c.name)}</button><button class="btn soft" data-act="unconfirm">Keep</button>` : `<button class="btn danger" data-act="confirm" data-id="${esc(c.id)}">Remove</button>`}</div></section>` : ""}`];
   },
+  import: () => ["Import roster", `<label class="f">Roster page on your school's site<input type="text" id="ri-url" inputmode="url" autocomplete="off" placeholder="https://…/sports/baseball/roster" value="${esc(S.team.team.rosterUrl || "")}"></label>
+    <label style="display:flex;align-items:center;gap:10px;font-weight:600"><input type="checkbox" id="ri-p" style="width:20px;height:20px"> Include pitchers</label>
+    <p class="muted small" style="margin:0">Hitters come in with number, position, class and bats/throws. Importing again updates them and never removes anyone. Two-way players are always included.</p>
+    <button class="btn wide" data-act="ri-go">Import</button>`],
   addcoach: () => ["Add a coach", `<label class="f">Name<input type="text" id="sc-name" placeholder="e.g. Coach Lee" autocomplete="off"></label>
     <p class="muted small" style="margin:0">Coaches see every player on the roster and can manage the team.</p><button class="btn wide" data-act="sc-save">Add coach</button>`],
   editteam() { const t = S.team.team; return ["Team", `<div class="grid"><label class="f full">Name<input type="text" id="tm-name" value="${esc(t.name)}"></label>
@@ -559,6 +565,8 @@ document.addEventListener("click", async (e) => {
     if (a === "scode") { const c = S.team.staff.find((x) => x.id === id); const r = await api("access", { method: "POST", query: { team: T }, body: { user: id } }); await refresh();
       return openSheet("code", { title: `${c.name}'s new code`, code: r.code, note: "The old code has stopped working." }); }
     if (a === "sdel") { await api("access", { method: "DELETE", query: { team: T, user: id } }); closeSheet(); await refresh(); return toast("Coach removed"); }
+    if (a === "ri-go") { b.disabled = true; b.textContent = "Importing…"; try { const r = await api("roster", { method: "POST", query: { team: T }, body: { url: val("ri-url"), pitchers: !!(document.getElementById("ri-p") || {}).checked } }); closeSheet(); await refresh();
+      return toast(r.added ? `Added ${r.added} player${r.added === 1 ? "" : "s"}${r.updated ? `, updated ${r.updated}` : ""}` : `Updated ${r.updated} players`); } finally { b.disabled = false; b.textContent = "Import"; } }
     if (a === "tm-save") { await api("team", { method: "PATCH", query: { id: T }, body: { name: val("tm-name"), shortName: val("tm-short"), season: val("tm-season") } }); closeSheet(); await refresh(); return toast("Saved"); }
     if (a === "nt-save") { const coachName = val("nt-coach"); const r = await api("team", { method: "POST", body: { name: val("nt-name"), shortName: val("nt-short"), season: val("nt-season"), coachName } });
       S.me = await api("me"); showTeams(); return openSheet("code", { title: "Head coach's code", code: r.code, note: `Send this to ${coachName} at ${r.team.name}.` }); }

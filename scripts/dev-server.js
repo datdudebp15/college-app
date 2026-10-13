@@ -1,5 +1,6 @@
-// Local server: serves public/ and the real api/ handlers on an in-memory Postgres seeded with the
-// fictional demo team. Sign in with the codes printed at startup. Nothing here touches the real database.
+// Local server: serves public/ and the real api/ handlers on a local Postgres kept in .devdb/ (git-ignored),
+// with the fictional demo team reset at every start. Sign in with the codes printed at startup.
+// Nothing here touches the real database. Delete .devdb/ to start from scratch.
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
@@ -11,7 +12,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = Number(process.env.PORT) || 3020;
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml", ".json": "application/json", ".webmanifest": "application/manifest+json" };
 
-await memoryDatabase();
+await memoryDatabase(path.join(root, ".devdb"));
 await seedDemo(DEV_CODES);
 await createAdmin("Warren (local admin)", DEV_CODES.admin);
 

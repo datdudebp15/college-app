@@ -7,9 +7,9 @@ import { PGlite } from "@electric-sql/pglite";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-/** A fresh in-memory Postgres for the api/ code to use. */
-export async function memoryDatabase() {
-  globalThis.__pglite = new PGlite();
+/** A local Postgres for the api/ code: in memory (tests), or kept in a folder (dev server). */
+export async function memoryDatabase(dataDir) {
+  globalThis.__pglite = dataDir ? new PGlite(dataDir) : new PGlite();
   await globalThis.__pglite.waitReady;
 }
 

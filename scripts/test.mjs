@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { memoryDatabase, call } from "./_vercel.js";
 import { seedDemo, createAdmin, DEV_CODES, DEMO_TEAM } from "./_seed.js";
+import { parseRosterHtml, fetchRoster } from "../api/_roster.js";
 
 await memoryDatabase();
 await seedDemo(DEV_CODES);
@@ -112,5 +113,44 @@ await test("the other team's coach sees only his own team", async () => {
   const r = await call("me", { code: OTHER_COACH });
   assert.deepEqual(r.body.teams.map((t) => t.id), [OTHER]);
 });
+
+console.log("roster import");
+// A fictional roster page in the WMT Digital format (Nuxt "devalue" data: one flat array, objects point at entries by index).
+function nuxtPage(root) {
+  const A = []; const enc = (v) => { const i = A.length; A.push(null);
+    A[i] = Array.isArray(v) ? v.map(enc) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, enc(x)])) : v; return i; };
+  enc(root);
+  return `<html><body><script type="application/json" data-nuxt-data="nuxt-app" id="__NUXT_DATA__">${JSON.stringify(A)}</script></body></html>`;
+}
+const season = { id: 1, name: "2027" };
+const entry = (id, first, last, jersey, pos, cls, bt) => ({ id, player_id: 100 + id, jersey_number: jersey, jersey_number_label: String(jersey), class_level: { name: cls },
+  player_position: { abbreviation: pos }, roster: { season }, profile_field_values: [],
+  player: { id: 100 + id, first_name: first, last_name: last, profile_field_values: bt ? [{ profile_field: { name: "Bats/Throws" }, value: bt }] : [] } });
+const page = nuxtPage({ data: { roster: { players: [
+  entry(1, "Test", "Shortstop", 6, "IF", "Redshirt Sophomore", "R/R"),
+  entry(2, "Test", "Twoway", 19, "P/OF", "Freshman", "L/L"),
+  entry(3, "Test", "Arm", 31, "P", "Junior", "R/R"),
+  entry(4, "Test", "Catcher", 9, "C/INF", "Fifth Year", "S/R"),
+] }, again: [entry(1, "Test", "Shortstop", 6, "IF", "Redshirt Sophomore", "R/R")] } });
+await test("reads players, positions, classes and bats/throws", async () => {
+  const r = parseRosterHtml(page);
+  assert.equal(r.season, 2027);
+  assert.equal(r.players.length, 4, "the same player twice in the page data counts once");
+  const ss = r.players.find((p) => p.last === "Shortstop");
+  assert.deepEqual([ss.jersey, ss.pos, ss.classYear, ss.bats, ss.throws, ss.pitcher], ["6", "IF", "RS So", "R", "R", false]);
+  const tw = r.players.find((p) => p.last === "Twoway");
+  assert.deepEqual([tw.pos, tw.pitcher, tw.bats], ["OF", false, "L"], "two-way players are hitters");
+  assert.equal(r.players.find((p) => p.last === "Arm").pitcher, true);
+  const c = r.players.find((p) => p.last === "Catcher");
+  assert.deepEqual([c.pos, c.classYear, c.bats], ["C", "Gr", "S"]);
+});
+await test("pages from unsupported sites are refused", async () => assert.throws(() => parseRosterHtml("<html></html>"), (e) => e.code === "unsupported_site"));
+await test("only public https roster pages are fetched", async () => {
+  for (const [u, code] of [["http://hokiesports.com/sports/baseball/roster", "bad_url"], ["https://localhost/roster", "bad_url"], ["https://127.0.0.1/roster", "bad_url"],
+    ["https://user:pw@example.com/roster", "bad_url"], ["https://hokiesports.com/sports/baseball/schedule", "not_roster"], ["not a url", "bad_url"]])
+    await assert.rejects(fetchRoster(u), (e) => e.code === code, u);
+});
+await test("players cannot import a roster", async () =>
+  assert.equal((await call("roster", { method: "POST", code: AVERY, query: { team: T }, body: { url: "https://example.com/roster" } })).status, 403));
 
 console.log(process.exitCode ? "\nSome tests failed." : `\nAll ${passed} tests passed.`);

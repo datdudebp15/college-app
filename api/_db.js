@@ -49,6 +49,11 @@ const SCHEMA = [
     created_at timestamptz NOT NULL DEFAULT now()
   )`,
   `CREATE INDEX IF NOT EXISTS players_team ON players (team_id)`,
+  // Where a player came from (e.g. "site" = the school's roster page) and his id there, so re-imports update him.
+  `ALTER TABLE players ADD COLUMN IF NOT EXISTS source text`,
+  `ALTER TABLE players ADD COLUMN IF NOT EXISTS source_id text`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS players_source ON players (team_id, source, source_id) WHERE source_id IS NOT NULL`,
+  `ALTER TABLE teams ADD COLUMN IF NOT EXISTS roster_url text`,
   // role: coach (sees and manages the whole team) or player (sees only player_id).
   `CREATE TABLE IF NOT EXISTS members (
     team_id text NOT NULL REFERENCES teams(id) ON DELETE CASCADE,

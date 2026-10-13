@@ -54,9 +54,9 @@ export async function seedDemo(codes = {}) {
 /** Creates an admin (sees every team, can create teams) and returns the code. */
 export async function createAdmin(name, code = newCode()) {
   await ensureSchema();
-  await query(`INSERT INTO users (id, name, code_hash, is_admin) VALUES ($1, $2, $3, true)`, [newId("user"), name, hashCode(code)]);
+  await query(`INSERT INTO users (id, name, code_hash, is_admin) VALUES ($1, $2, $3, true) ON CONFLICT (code_hash) DO NOTHING`, [newId("user"), name, hashCode(code)]);
   return code;
 }
 
-// Fixed codes for local development only (the dev server's database is in memory and never deployed).
+// Fixed codes for local development only (the dev server's database lives in .devdb/ and is never deployed).
 export const DEV_CODES = { admin: "ADMIN-LOCAL", coach: "COACH-LOCAL", players: { Avery: "AVERY-LOCAL", Kowalczyk: "KOWAL-LOCAL" } };
