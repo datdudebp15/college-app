@@ -75,6 +75,13 @@ body.sheet-open #stage{transform:scale(.94) translateY(14px);border-radius:22px;
 .gbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .gbtn.icon{padding:0;width:44px}
 #top .l{justify-self:start} #top .r{justify-self:end}
+.rgrp{display:flex;gap:8px;align-items:center}
+.avatar{appearance:none;border:0;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:15px;letter-spacing:.02em;color:var(--ink);transition:transform var(--spring-d) var(--spring)}
+.avatar:active{transform:scale(.9)}
+.avatar.viewing{box-shadow:var(--glass-shadow),0 0 0 2.5px var(--ember)}
+.avatar.big{width:56px;height:56px;font-size:20px;color:#fff;background:linear-gradient(150deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#000));box-shadow:none}
+.pf{display:flex;gap:14px;align-items:center} .pf b{display:block;font-size:19px;font-weight:800;letter-spacing:-.025em} .pf .meta{color:var(--muted);font-size:14px;font-weight:600}
+.list.picker{max-height:46vh;overflow-y:auto;box-shadow:0 0 0 1px var(--line)}
 #top .t{font-weight:700;font-size:16px;padding:0 16px;height:36px;border-radius:999px;display:flex;align-items:center;opacity:0;transform:translateY(-6px) scale(.96);transition:opacity .25s,transform var(--spring-d) var(--spring);white-space:nowrap;max-width:52vw;overflow:hidden;text-overflow:ellipsis}
 body.scrolled #top .t{opacity:1;transform:none}
 
@@ -194,6 +201,21 @@ body.sheet-open #sheet{transform:translateY(0)}
   transition:transform var(--spring-d) var(--spring);pointer-events:none}
 #toast.on{transform:translate(-50%,0)}
 
+.seg{display:flex;gap:2px;background:var(--fill);border-radius:14px;padding:3px}
+.seg button{flex:1 1 0;min-height:38px;border:0;background:transparent;border-radius:11px;font-weight:700;font-size:15px;color:var(--ink-2);transition:background .25s,box-shadow .25s,color .2s}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 4px rgba(20,30,60,.14),0 0 0 .5px rgba(20,30,60,.06)}
+#tabs button{min-width:62px;padding:0 10px}
+.list.inset{box-shadow:0 0 0 1px var(--line);border-radius:18px}
+.num.up{background:var(--good-soft);color:var(--good)} .num.k{background:var(--bad-soft);color:var(--bad)} .num.work{background:rgba(245,158,11,.16);color:var(--warn)}
+.chip.bad{background:var(--bad-soft);color:var(--bad)} .chip.warn{background:rgba(245,158,11,.16);color:var(--warn)}
+details.more summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+details.more summary::-webkit-details-marker{display:none}
+.mu{display:flex;flex-direction:column;gap:2px}
+.murow{appearance:none;border:0;background:var(--card);border-radius:12px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:3px;font-size:14px;color:var(--ink-2)}
+.murow b{color:var(--ink);font-size:15px}
+.tend{margin:0;padding-left:18px;color:var(--ink-2);font-size:14.5px;display:flex;flex-direction:column;gap:4px}
+.meta.lines{display:flex;flex-direction:column} .meta.lines span{white-space:nowrap} .meta.lines b{color:var(--ink-2);font-weight:700}
+.murow:active{transform:scale(.99)}
 /* player profile */
 .card h4{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:6px 0 -4px}
 .stats small{display:block;font-size:11.5px;color:var(--muted);font-weight:600;margin-top:2px}
@@ -268,6 +290,8 @@ const I = {
   roster: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.5"/><path d="M15.8 14.2c2.3.2 4 1.8 4.6 4.8"/></svg>',
   staff: '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 4.5V3.5h6v1M9 10h6M9 14h6M9 18h3"/></svg>',
   team: '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.3-3 7.7-7 9.5-4-1.8-7-5.2-7-9.5V6z"/><path d="M9 12l2 2 4-4"/></svg>',
+  today: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>',
+  scout: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5M11 7.5v7M7.5 11h7"/></svg>',
   me: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.8 3.6-6 7-6s6.2 2.2 7 6"/></svg>',
   account: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M4.2 7.5l2.1 1.2M17.7 15.3l2.1 1.2M4.2 16.5l2.1-1.2M17.7 8.7l2.1-1.2"/></svg>',
   ball: '<svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="2.6"/><path d="M14 9.5c4.6 3.8 7 8.8 7 14.5s-2.4 10.7-7 14.5M34 9.5c-4.6 3.8-7 8.8-7 14.5s2.4 10.7 7 14.5" stroke="var(--ember)" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="1 4.2"/></svg>',
@@ -323,7 +347,10 @@ async function openTeam(id) {
   try { S.team = await api("team", { query: { id } }); }
   catch (e) { if (e.code === "not_found") { ls.set("oc-team", null); showTeams(); } return; }
   ls.set("oc-team", id); S.view = "team";
-  S.tab = S.viewAs ? (coach() ? "roster" : "me") : coach() ? (ls.get("oc-tab-c") || "roster") : (ls.get("oc-tab-p") || "me");
+  if (!S.viewAs && S.team.me.role === "coach") S.roster = S.team.players;
+  S.tab = S.viewAs ? (coach() ? "today" : "me") : coach() ? (ls.get("oc-tab-c") || "today") : (ls.get("oc-tab-p") || "me");
+  if (SC.team !== id) Object.assign(SC, { team: id, choices: null, opp: null, data: {}, busy: {} });
+  delete TD[id];
   if (!tabList().some((t) => t[0] === S.tab)) S.tab = tabList()[0][0];
   buildTabs(); renderPage("enter");
 }
@@ -335,11 +362,11 @@ const manyTeams = () => S.me && !S.viewAs && (S.me.teams.length > 1 || S.me.user
 const isAdmin = () => S.me && S.me.user.admin && !S.viewAs;
 async function startPreview(role, playerId, name) {
   closeSheet(true); Object.keys(PROF).forEach((k) => delete PROF[k]);
-  S.viewAs = { role, playerId: playerId || null, name }; await openTeam(S.team.team.id); scrollTo(0, 0); toast(`Previewing as ${name}`);
+  S.pickPlayer = false; S.viewAs = { role, playerId: playerId || null, name }; await openTeam(S.team.team.id); scrollTo(0, 0); toast(`Viewing as ${name}`);
 }
 async function exitPreview() {
   Object.keys(PROF).forEach((k) => delete PROF[k]); const id = S.team.team.id;
-  S.viewAs = null; await openTeam(id); scrollTo(0, 0);
+  closeSheet(true); S.pickPlayer = false; S.viewAs = null; await openTeam(id); scrollTo(0, 0); toast("Back to your admin view");
 }
 
 /* ---------- screens ---------- */
@@ -354,13 +381,18 @@ function showSignin() {
       <button class="btn" type="submit">Sign in</button></form>
     ${S.signinErr ? `<p class="err" role="alert">${esc(S.signinErr)}</p>` : `<p class="muted small" style="margin:16px 0 0">Your coach gives you the code.</p>`}</section>`;
 }
+const initials = (n) => String(n || "").replace(/\(.*?\)/g, "").replace(/^coach\s+/i, "").trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
+function profileBtn() {
+  const who = S.viewAs ? (S.viewAs.role === "coach" ? "Coach" : S.viewAs.name) : S.me ? S.me.user.name : "";
+  return `<button class="avatar glass${S.viewAs ? " viewing" : ""}" data-act="sheet" data-s="profile" aria-label="Profile${S.me && S.me.user.admin ? " and view switcher" : ""}">${esc(initials(who))}</button>`;
+}
 function topBar(left, title, right) {
   TOP.hidden = false; PAGE.style.padding = "";
   $(".l", TOP).innerHTML = left || ""; $(".t", TOP).textContent = title || ""; $(".t", TOP).style.visibility = title ? "" : "hidden"; $(".r", TOP).innerHTML = right || "";
 }
 function showTeams() {
   S.view = "teams"; S.team = null; TABS.hidden = true;
-  topBar("", "Teams", `<button class="gbtn glass" data-act="signout">Sign out</button>`);
+  topBar("", "Teams", profileBtn());
   const T = S.me.teams;
   setPage(`<div class="lt"><h1>Teams</h1><p>${esc(S.me.user.name)}</p></div>
     ${T.length ? `<div class="list">${T.map((t) => `<button class="row" data-act="team" data-id="${esc(t.id)}"><span class="num">${esc((t.shortName || t.name)[0])}</span><span><b>${esc(t.name)}</b><span class="meta">${esc(t.season)} season${t.demo ? " · demo" : ""}</span></span><span class="chip">${t.role === "coach" ? "Coach" : "Player"}</span></button>`).join("")}</div>`
@@ -368,18 +400,18 @@ function showTeams() {
     ${S.me.user.admin ? `<button class="btn soft" data-act="sheet" data-s="newteam">New team</button>` : ""}`, "enter");
 }
 function tabList() {
-  return coach() ? [["roster", "Roster", I.roster], ["staff", "Staff", I.staff], ["team", "Team", I.team]] : [["me", "Me", I.me], ["account", "Account", I.account]];
+  return coach() ? [["today", "Today", I.today], ["roster", "Roster", I.roster], ["scout", "Scouting", I.scout], ["staff", "Staff", I.staff], ["team", "Team", I.team]] : [["me", "Me", I.me], ["account", "Account", I.account]];
 }
 function renderPage(anim) {
   const team = S.team.team, short = team.shortName || team.name;
   const left = S.viewAs ? `<button class="gbtn glass" data-act="exit-preview">${I.x}Exit preview</button>` : manyTeams() ? `<button class="gbtn glass icon" data-act="teams" aria-label="All teams">${I.back}</button>` : "";
   const right = coach() && S.tab === "roster" ? `<button class="gbtn glass icon" data-act="sheet" data-s="add" aria-label="Add a player">${I.plus}</button>`
     : coach() && S.tab === "staff" ? `<button class="gbtn glass icon" data-act="sheet" data-s="addcoach" aria-label="Add a coach">${I.plus}</button>` : "";
-  const titles = { roster: "Roster", staff: "Staff", team: "Team", me: S.team.players[0] ? S.team.players[0].first : "Me", account: "Account" };
-  topBar(left, `${titles[S.tab]} · ${short}`, right);
+  const titles = { today: "Today", scout: "Scouting", roster: "Roster", staff: "Staff", team: "Team", me: S.team.players[0] ? S.team.players[0].first : "Me", account: "Account" };
+  topBar(left, `${titles[S.tab]} · ${short}`, `<span class="rgrp">${right}${profileBtn()}</span>`);
   const demo = (S.viewAs ? `<div class="note preview"><span>Previewing as <b>${esc(S.viewAs.name)}</b>. This is exactly what ${S.viewAs.role === "coach" ? "a coach" : "he"} sees. Read-only.</span><button class="btn sm" data-act="exit-preview">Exit</button></div>` : "")
     + (team.demo ? `<div class="note">Demo team. Every player and coach here is fictional.</div>` : "");
-  const body = { roster: rosterPage, staff: staffPage, team: teamPage, me: mePage, account: accountPage }[S.tab]();
+  const body = { today: todayPage, scout: scoutPage, roster: rosterPage, staff: staffPage, team: teamPage, me: mePage, account: accountPage }[S.tab]();
   setPage(demo ? body.replace(/^(<div class="lt">[\s\S]*?<\/div>)/, `$1${demo}`) : body, anim);
 }
 function setPage(html, anim) {
@@ -411,9 +443,6 @@ function teamPage() {
       <div><b>${S.team.staff.length}</b><span>Coaches</span></div><div><b>${S.team.players.filter((p) => p.access === "active").length}</b><span>Players signed in</span></div></div></section>
     <section class="card"><div class="hd"><h3>Roster from your school's site</h3></div><p class="muted" style="margin:0">${t.rosterUrl ? `Last imported from ${esc(new URL(t.rosterUrl).hostname)}. Import again to pick up new numbers, positions and classes.` : "Bring in your hitters with their numbers, positions, classes and bats/throws."}</p>
       <button class="btn soft" data-act="sheet" data-s="import">${t.rosterUrl ? "Import again" : "Import roster"}</button></section>
-    ${isAdmin() ? `<section class="card"><div class="hd"><h3>Preview the app</h3><span class="chip">Admin</span></div>
-      <p class="muted" style="margin:0">See exactly what a coach or a player on this team sees. Nothing can be changed while previewing.</p>
-      <div class="actions"><button class="btn soft" data-act="preview-coach">As a coach</button><button class="btn soft" data-act="sheet" data-s="previewpick">As a player</button></div></section>` : ""}
     <section class="card"><div class="hd"><h3>NCAA games</h3><button class="link" data-act="sheet" data-s="editteam">Change</button></div>
       <p class="muted" style="margin:0">${t.ncaaSeo ? `Linked to <b style="color:var(--ink)">${esc(t.ncaaSeo)}</b> on ncaa.com. Box scores and play-by-play update every night; this brings them in now.` : "Not linked yet. Updating finds your team on ncaa.com by its name."}</p>
       <button class="btn soft" data-act="ncaa-sync">Update games now</button></section>` + accountCard();
@@ -525,6 +554,88 @@ function profileSections(id, self) {
   return out.join("");
 }
 function accountPage() { return lt("Account", "") + accountCard(); }
+
+/* ---------- Today: the coach's morning view ---------- */
+const TD = {};
+function loadToday() {
+  const k = S.team.team.id;
+  if (TD[k]) return TD[k];
+  TD[k] = { loading: true };
+  api("today", { query: { team: k } }).then((d) => { TD[k] = { data: d }; }).catch((e) => { TD[k] = { error: e.code || "server" }; })
+    .finally(() => { if (S.view === "team" && S.tab === "today" && S.team.team.id === k) renderPage(); });
+  return TD[k];
+}
+const sl = (m) => `${f3(m.avg)}/${f3(m.obp)}/${f3(m.slg)}`;
+const signed = (x, d = 3) => (x > 0 ? "+" : x < 0 ? "−" : "") + (d === 3 ? f3(Math.abs(x)) : Math.round(Math.abs(x)));
+function todayPage() {
+  const st = loadToday(), d = st.data;
+  if (!d) return lt("Today", "") + (st.error ? `<div class="card"><p class="muted" style="margin:0">Couldn't load today's view. Try again in a minute.</p></div>` : `<section class="card"><div class="skel"></div><div class="skel short"></div></section>`);
+  if (d.error === "no_ncaa_team") return lt("Today", "") + `<div class="card"><p class="muted" style="margin:0">Link the team to its NCAA team on the Team tab to bring in games.</p></div>`;
+  if (d.empty) return lt("Today", "") + `<div class="card"><p class="muted" style="margin:0">No games yet. This fills in after the first game.</p></div>`;
+  const sub = d.seasonOver ? `The ${d.season} season is over. This is where everyone finished, through ${esc(gameDay(d.asOf))}.` : `Through ${esc(gameDay(d.asOf))}`;
+  const g = d.lastGame, nx = d.next;
+  const row = (x, kind) => `<button class="row trend" data-act="sheet" data-s="player" data-id="${esc(x.id)}"><span class="num ${kind}">${esc(initials(x.name))}</span>
+    <span><b>${esc(x.name)}</b><span class="meta lines"><span>Last ${x.games} games <b>${sl(x.recent)}</b></span><span>Season ${sl(x.season)}</span></span></span>
+    <span class="chip ${kind === "up" ? "active" : kind === "k" ? "bad" : "warn"}">${kind === "k" ? (x.d.whiff > x.d.k ? `Miss ${Math.round(x.recent.whiffPct)}% (${Math.round(x.season.whiffPct)}%)` : `K ${Math.round(x.recent.kPct)}% (${Math.round(x.season.kPct)}%)`) : `${signed(x.d.ops)} OPS`}</span></button>`;
+  const group = (title, xs, kind, why) => xs.length ? `<section class="card"><div class="hd"><h3>${title}</h3><span class="muted small">${xs.length}</span></div><p class="small muted" style="margin:0">${why}</p><div class="list inset">${xs.map((x) => row(x, kind)).join("")}</div></section>` : "";
+  const box = g.box.length ? `<div class="list inset">${g.box.map((b) => `<button class="row" data-act="sheet" data-s="player" data-id="${esc(b.id)}"><span class="num">${esc(initials(b.name))}</span><span><b>${esc(b.name)}</b><span class="meta">${b.h}-for-${b.ab}${b.xbh.length ? " · " + b.xbh.join(", ") : ""}${b.bb ? ` · ${b.bb} BB` : ""}${b.k ? ` · ${b.k} K` : ""} · ${b.pitches} pitches</span></span><span></span></button>`).join("")}</div>` : "";
+  return lt("Today", sub)
+    + `<section class="card next"><div class="hd"><h3>Up next</h3>${nx ? `<span class="chip invited">${esc(gameDay(nx.date))}</span>` : ""}</div>${nx ? `<div class="nextline"><b>${nx.home ? "vs" : "at"} ${esc(nx.opponentName)}</b><button class="btn sm soft" data-act="scout-open" data-opp="${esc(nx.opponentSeo)}">Scout them</button></div>` : `<p class="muted" style="margin:0">The next schedule isn't posted yet. Scout any team from last season on the Scouting tab.</p>`}</section>`
+    + group("Trending up", d.up, "up", `Hitting at least .100 OPS above their season over their last ${d.recentGames} games.`)
+    + group("Striking out more", d.strikeouts, "k", `Strikeouts or misses per swing up 8 points or more over their last ${d.recentGames} games. (Chase rate needs TrackMan.)`)
+    + group("Needs work", d.work, "work", `OPS down .150 or more over their last ${d.recentGames} games.`)
+    + (!d.up.length && !d.strikeouts.length && !d.work.length ? `<div class="card"><p class="muted" style="margin:0">Nobody is far from their season numbers right now.</p></div>` : "")
+    + `<section class="card"><div class="hd"><h3>Last game</h3><span class="muted small">${esc(gameDay(g.date))}</span></div><div class="nextline"><b>${g.home ? "vs" : "at"} ${esc(g.opponent)}</b><span>${g.us > g.them ? "W" : g.us < g.them ? "L" : "T"} ${esc(g.us)}-${esc(g.them)}</span></div>${box}</section>`
+    + (d.steady.length ? `<details class="card more"><summary><h3>Steady</h3><span class="muted small">${d.steady.length} hitters close to their season numbers</span></summary><div class="list inset">${d.steady.map((x) => `<button class="row" data-act="sheet" data-s="player" data-id="${esc(x.id)}"><span class="num">${esc(initials(x.name))}</span><span><b>${esc(x.name)}</b><span class="meta lines"><span>Last ${x.games} games <b>${sl(x.recent)}</b></span><span>Season ${sl(x.season)}</span></span></span><span></span></button>`).join("")}</div></details>` : "");
+}
+
+/* ---------- Scouting: any opponent's pitchers against our hitters ---------- */
+const SC = { team: null, choices: null, opp: null, data: {}, busy: {} };
+function loadChoices() {
+  if (SC.choices || SC.busy._c) return;
+  SC.busy._c = true;
+  api("scout", { query: { team: S.team.team.id } }).then((d) => {
+    SC.choices = d.choices || { upcoming: [], lastSeason: [] }; SC.err = d.error || null;
+    SC.opp ||= (SC.choices.upcoming[0] || SC.choices.lastSeason[0] || {}).opp || null;
+    if (SC.opp) loadScout(SC.opp);
+  }).catch((e) => { SC.err = e.code || "server"; }).finally(() => { SC.busy._c = false; if (S.tab === "scout") renderPage(); });
+}
+function loadScout(opp) {
+  const cur = SC.data[opp];
+  if (SC.busy[opp] || (cur && cur.complete)) return;
+  SC.busy[opp] = true;
+  api("scout", { query: { team: S.team.team.id, opp } }).then((d) => { SC.data[opp] = d; if (!d.complete && !d.empty) setTimeout(() => loadScout(opp), 200); })
+    .catch((e) => { SC.data[opp] = { error: e.code || "server" }; })
+    .finally(() => { SC.busy[opp] = false; if (S.view === "team" && S.tab === "scout" && SC.opp === opp) renderPage(); });
+}
+function scoutPage() {
+  loadChoices();
+  const c = SC.choices;
+  if (SC.err === "no_ncaa_team") return lt("Scouting", "") + `<div class="card"><p class="muted" style="margin:0">Link the team to its NCAA team on the Team tab first.</p></div>`;
+  if (!c) return lt("Scouting", "") + `<section class="card"><div class="skel"></div><div class="skel short"></div></section>`;
+  const opt = (o, label) => `<option value="${esc(o.opp)}"${o.opp === SC.opp ? " selected" : ""}>${esc(o.name)}${label ? " · " + esc(label) : ""}</option>`;
+  const picker = `<label class="f">Opponent<select id="sc-opp">${c.upcoming.length ? `<optgroup label="Coming up">${c.upcoming.map((o) => opt(o, gameDay(o.date))).join("")}</optgroup>` : ""}${c.lastSeason.length ? `<optgroup label="Last season">${c.lastSeason.map((o) => opt(o, `${o.games} game${o.games === 1 ? "" : "s"}`)).join("")}</optgroup>` : ""}</select></label>`;
+  const d = SC.opp && SC.data[SC.opp];
+  let body = "";
+  if (!SC.opp) body = `<div class="card"><p class="muted" style="margin:0">No opponents yet. Once the schedule is posted or games are played, they show up here.</p></div>`;
+  else if (!d) body = `<section class="card"><p class="muted" style="margin:0">Loading their games…</p><div class="skel"></div><div class="skel short"></div></section>`;
+  else if (d.error) body = `<div class="card"><p class="muted" style="margin:0">Couldn't load this team right now. Try again in a minute.</p></div>`;
+  else if (d.empty) body = `<div class="card"><p class="muted" style="margin:0">No games from ${esc(d.opponent.name)} yet.</p></div>`;
+  else {
+    const card = (p, tag) => `<div class="pitcher"><div class="ph"><b>${esc(p.name)}</b><span class="chip${p.day ? " invited" : ""}">${esc(tag)}</span></div>
+      <div class="mini">${[["IP", p.ip], ["K%", pc(p.kPct)], ["BB%", pc(p.bbPct)], ["1st-pitch strike", pc(p.fpStrikePct)], ["Whiff", pc(p.whiffPct)], ["Ground balls", pc(p.gbPct)]].map(([l, v]) => `<span><b>${esc(v)}</b>${esc(l)}</span>`).join("")}</div>
+      ${(p.tendencies || []).length ? `<ul class="tend">${p.tendencies.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+      ${p.hitters.length ? `<div class="mu">${p.hitters.map((h) => `<button class="murow" data-act="sheet" data-s="player" data-id="${esc(h.id)}"><b>${esc(h.name)}</b>${h.notes.length ? `<span>${esc(h.notes.join(" "))}</span>` : ""}${h.faced.length ? `<span class="muted">Faced him: ${esc(h.faced.map((o) => (OUTC[o] || o).toLowerCase()).join(", "))}</span>` : ""}</button>`).join("")}</div>` : (p.tendencies || []).length ? "" : `<p class="small muted" style="margin:0">Nothing stands out against your hitters.</p>`}</div>`;
+    const sec = (title, xs, tag) => xs.length ? `<section class="card"><div class="hd"><h3>${title}</h3></div>${xs.map((p) => card(p, tag(p))).join("")}</section>` : "";
+    body = `<section class="card"><div class="nextline"><b>${esc(d.opponent.name)}</b><span>${d.next ? "Next: " + esc(gameDay(d.next.date)) : esc(d.season) + " season"}</span></div>
+        <p class="small muted" style="margin:0">From their last ${d.total} games, through ${esc(gameDay(d.through))}${d.complete ? "" : ` · loading ${d.loaded} of ${d.total}…`}. Pitch types, velocity and which hand they throw with come with TrackMan.</p></section>`
+      + sec("Weekend rotation", d.rotation, (p) => p.day + " starter")
+      + sec("Midweek", d.midweek, (p) => p.day + " starter")
+      + sec("Bullpen", d.bullpen, (p) => `${p.apps} apps`)
+      + (!d.rotation.length && !d.midweek.length && !d.bullpen.length ? `<div class="card"><p class="muted" style="margin:0">${d.complete ? "Not enough of their games to read their staff." : "Still loading their games…"}</p></div>` : "");
+  }
+  return lt("Scouting", "Their pitchers, lined up against your hitters") + `<section class="card">${picker}</section>` + body;
+}
 
 /* ---------- tab bar ---------- */
 function buildTabs() {
@@ -648,7 +759,21 @@ const SHEETS = {
       <p class="muted" style="margin:0">A new code turns the old one off.</p><button class="btn soft" data-act="scode" data-id="${esc(c.id)}">Make a new code</button></section>
       ${S.team.staff.length > 1 ? `<section class="card"><h3>Remove from staff</h3><div class="actions">${S.confirm === c.id ? `<button class="btn danger" data-act="sdel" data-id="${esc(c.id)}">Remove ${esc(c.name)}</button><button class="btn soft" data-act="unconfirm">Keep</button>` : `<button class="btn danger" data-act="confirm" data-id="${esc(c.id)}">Remove</button>`}</div></section>` : ""}`];
   },
-  previewpick: () => ["Preview as a player", S.team.players.length ? `<div class="list">${S.team.players.map((p) => `<button class="row" data-act="preview-player" data-id="${esc(p.id)}"><span class="num">${esc(p.jersey ?? "–")}</span><span><b>${esc(fullName(p))}</b><span class="meta">${esc([p.pos, p.classYear].filter(Boolean).join(" · "))}</span></span><span></span></button>`).join("")}</div>` : `<p class="muted" style="margin:0">No players on the roster yet.</p>`],
+  profile() {
+    const u = S.me.user, inTeam = S.view === "team" && S.team, mode = S.viewAs ? S.viewAs.role : "admin", picking = S.pickPlayer || mode === "player";
+    const role = u.admin ? "Admin" : coach() ? "Coach" : "Player";
+    let html = `<section class="card"><div class="pf"><span class="avatar big">${esc(initials(u.name))}</span><div><b>${esc(u.name)}</b><span class="meta">${role}${inTeam ? " · " + esc(S.team.team.name) : ""}</span></div></div></section>`;
+    if (u.admin && inTeam) {
+      const views = [["admin", "Admin"], ["coach", "Coach"], ["player", "Player"]];
+      const cur = picking ? "player" : mode;
+      html += `<section class="card"><h3>View the app as</h3>
+        <div class="seg" role="group" aria-label="View the app as">${views.map(([k, l]) => `<button data-act="view-as" data-v="${k}" aria-pressed="${cur === k}">${l}</button>`).join("")}</div>
+        <p class="muted small" style="margin:0">${cur === "admin" ? "Everything, with your admin tools." : cur === "coach" ? "Exactly what a coach on this team sees. Read-only." : mode === "player" ? `Exactly what ${esc(S.viewAs.name)} sees. Read-only. Pick someone else below.` : "Pick a player to see exactly what he sees. Read-only."}</p>
+        ${picking ? (S.roster || []).length ? `<div class="list picker">${S.roster.map((p) => `<button class="row" data-act="view-as-player" data-id="${esc(p.id)}"><span class="num">${esc(p.jersey ?? "–")}</span><span><b>${esc(fullName(p))}</b><span class="meta">${esc([p.pos, p.classYear].filter(Boolean).join(" · "))}</span></span>${S.viewAs && S.viewAs.playerId === p.id ? `<span class="chip active">Viewing</span>` : "<span></span>"}</button>`).join("")}</div>` : `<p class="muted" style="margin:0">No players on the roster yet.</p>` : ""}</section>`;
+    }
+    html += `<div class="actions">${S.me.teams.length > 1 || u.admin ? `<button class="btn soft" data-act="teams">${inTeam ? "Switch team" : "All teams"}</button>` : ""}<button class="btn danger" data-act="signout">Sign out</button></div>`;
+    return ["Profile", html];
+  },
   import: () => ["Import roster", `<label class="f">Roster page on your school's site<input type="text" id="ri-url" inputmode="url" autocomplete="off" placeholder="https://…/sports/baseball/roster" value="${esc(S.team.team.rosterUrl || "")}"></label>
     <label style="display:flex;align-items:center;gap:10px;font-weight:600"><input type="checkbox" id="ri-p" style="width:20px;height:20px"> Include pitchers</label>
     <p class="muted small" style="margin:0">Hitters come in with number, position, class and bats/throws. Importing again updates them and never removes anyone. Two-way players are always included.</p>
@@ -688,6 +813,10 @@ $("#scrim").addEventListener("click", () => closeSheet());
 addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
 
 /* ---------- actions ---------- */
+document.addEventListener("change", (e) => {
+  if (e.target.id !== "sc-opp") return;
+  SC.opp = e.target.value; loadScout(SC.opp); renderPage();
+});
 document.addEventListener("submit", async (e) => {
   if (e.target.id !== "signin") return; e.preventDefault();
   const code = $("#code").value.trim();
@@ -703,8 +832,8 @@ document.addEventListener("click", async (e) => {
   try {
     if (a === "signout") return signOut();
     if (a === "team") return openTeam(id);
-    if (a === "teams") { closeSheet(true); ls.set("oc-team", null); S.me = await api("me"); return showTeams(); }
-    if (a === "sheet") return openSheet(b.dataset.s, { id });
+    if (a === "teams") { closeSheet(true); S.viewAs = null; ls.set("oc-team", null); S.me = await api("me"); return showTeams(); }
+    if (a === "sheet") { if (b.dataset.s === "profile") S.pickPlayer = false; return openSheet(b.dataset.s, { id }); }
     if (a === "close") return closeSheet();
     if (a === "confirm") { S.confirm = id; haptic(); return renderSheet(false); }
     if (a === "unconfirm") { S.confirm = null; return renderSheet(false); }
@@ -718,9 +847,13 @@ document.addEventListener("click", async (e) => {
     if (a === "scode") { const c = S.team.staff.find((x) => x.id === id); const r = await api("access", { method: "POST", query: { team: T }, body: { user: id } }); await refresh();
       return openSheet("code", { title: `${c.name}'s new code`, code: r.code, note: "The old code has stopped working." }); }
     if (a === "sdel") { await api("access", { method: "DELETE", query: { team: T, user: id } }); closeSheet(); await refresh(); return toast("Coach removed"); }
-    if (a === "preview-coach") return startPreview("coach", null, "a coach");
-    if (a === "preview-player") { const p = playerById(id); return startPreview("player", id, p ? fullName(p) : "a player"); }
+    if (a === "view-as") { const v = b.dataset.v;
+      if (v === "admin") { if (S.viewAs) return exitPreview(); S.pickPlayer = false; return renderSheet(false); }
+      if (v === "coach") return S.viewAs && S.viewAs.role === "coach" ? closeSheet() : startPreview("coach", null, "a coach");
+      S.pickPlayer = true; haptic(); return renderSheet(false); }
+    if (a === "view-as-player" || a === "preview-player") { const p = (S.roster || S.team.players).find((x) => x.id === id); return startPreview("player", id, p ? fullName(p) : "a player"); }
     if (a === "exit-preview") return exitPreview();
+    if (a === "scout-open") { SC.opp = b.dataset.opp; loadScout(SC.opp); return selectTab("scout"); }
     if (a === "rewrite") { loadProfile(id, true); return renderSheet(false); }
     if (a === "ncaa-sync") { b.disabled = true; let n = 0, g = 0;
       try { for (let i = 0; i < 40; i++) { b.textContent = n ? `Updating… ${g} games` : "Updating…"; const r = await api("sync", { method: "POST", query: { team: T } }); n++; g += (r.did && r.did.games) || 0;

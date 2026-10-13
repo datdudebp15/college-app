@@ -6,7 +6,7 @@ import { seedDemo, createAdmin, DEV_CODES, DEMO_TEAM } from "./_seed.js";
 import { parseRosterHtml, fetchRoster } from "../api/_roster.js";
 import { parsePA, parseGame, nameKey } from "../api/_ncaa.js";
 import { metrics, flags } from "../api/_hitting.js";
-import { matchup, likelyStarter } from "../api/_opponent.js";
+import { matchup, likelyStarter, aliases, nameQuality } from "../api/_opponent.js";
 
 await memoryDatabase();
 await seedDemo(DEV_CODES);
@@ -254,6 +254,10 @@ await test("matchup notes come from both sides' numbers", async () => {
   const notes = matchup({ fpStrikePct: 70, whiffPct: 30, kLookingShare: 10, gbPct: 40, bip: 30, bbPct: 5, pitchesPerBF: 3.8 }, { fpSwingPct: 10, whiffPct: 25, klShare: 0, k: 3, batted: { gbPct: 30 } });
   assert.equal(notes.length, 2);
   assert.match(notes[0], /first-pitch strike 70%/);
+});
+await test("a last-name-only pitcher folds into the one full name it matches", async () => {
+  assert.deepEqual(["Wylan Moss", "W. Moss", "Moss", "moss|w"].map(nameQuality), [3, 2, 1, 0]);
+  assert.deepEqual(aliases(["cervantes|", "cervantes|a", "smith|", "smith|j", "smith|k", "moss|w"]), { "cervantes|": "cervantes|a" }, "two Smiths: leave it alone");
 });
 await test("likely starter: whoever started their last game on that weekday", async () => {
   const staff = [{ name: "Fri Guy", starts: 3, last: "2026-04-10", recent: [{ date: "2026-04-10", started: true }] },

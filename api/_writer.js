@@ -120,11 +120,12 @@ const PLAIN = {
   },
   postgame(input) {
     const ab = input.atBats, hits = ab.filter((a) => /^(1B|2B|3B|HR)$/.test(a.outcome)).length, abs = ab.filter((a) => !/^(BB|IBB|HBP|SF|SH)$/.test(a.outcome)).length;
-    const pitches = ab.reduce((s, a) => s + a.pitches, 0), ks = ab.filter((a) => /^K/.test(a.outcome));
+    const pitches = ab.reduce((s, a) => s + (a.pitches || 0), 0);
+    // no canned "work on" line: without Claude the note only says what happened
     return {
       headline: `${hits}-for-${abs} vs ${input.game.opponent}`,
-      how: ab.map((a) => `${OUT[a.outcome] || "made an out"} in the ${ord(a.inning)}${a.pitcher ? ` against ${a.pitcher}` : ""}`).join("; ").replace(/^./, (c) => "You " + c) + `. You saw ${pitches} pitches.`,
-      workOn: ks.length >= 2 ? `${ks.length} strikeouts: look back at the two-strike pitches in those at-bats.` : ks.some((a) => a.outcome === "KL") ? "You took strike three once; know the zone with two strikes." : "Keep the same approach into the next game.",
+      how: ab.map((a) => `${OUT[a.outcome] || "made an out"} in the ${ord(a.inning)}${a.pitcher ? ` against ${a.pitcher}` : ""}`).join("; ").replace(/^./, (c) => "You " + c) + (pitches ? `. You saw ${pitches} pitches.` : "."),
+      workOn: "",
     };
   },
   opponent(input) {

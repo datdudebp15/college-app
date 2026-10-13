@@ -14,12 +14,16 @@ export async function opponentStaff(seo, beforeDate) {
   if (!lines.length) return null;
   const pas = await query(`SELECT p.pitcher, p.seq, p.outcome, p.in_play, p.bb, p.swings, p.whiffs, p.pitches, p.called FROM ncaa_pas p JOIN ncaa_games g ON g.id = p.game_id
     WHERE p.pitch_seo = $1 AND g.date < $2 AND g.date >= $3`, [seo, beforeDate, lines[lines.length - 1].date]);
+  // some scorers write a pitcher's last name only ("cervantes|"); fold that into the one full name it matches
+  const alias = aliases(lines.map((L) => L.name));
+  for (const L of lines) L.name = alias[L.name] || L.name;
+  for (const p of pas) p.pitcher = alias[p.pitcher] || p.pitcher;
   const byName = new Map();
   for (const L of lines) {
-    const P = byName.get(L.name) || { name: L.name, apps: 0, starts: 0, outs: 0, bf: 0, k: 0, bb: 0, h: 0, hr: 0, pitches: 0, startDays: [], last: null, recent: [] };
+    const P = byName.get(L.name) || { name: L.name, keys: [L.name, ...Object.keys(alias).filter((k) => alias[k] === L.name)], apps: 0, starts: 0, outs: 0, bf: 0, k: 0, bb: 0, h: 0, hr: 0, pitches: 0, startDays: [], last: null, recent: [] };
     P.apps++; if (L.started) { P.starts++; P.startDays.push(L.date); }
     P.outs += L.outs; P.bf += L.bf; P.k += L.k; P.bb += L.bb; P.h += L.h; P.hr += L.hr; P.pitches += L.pitches;
-    P.display ??= L.display; P.last ??= L.date; if (P.recent.length < 4) P.recent.push({ date: L.date, started: L.started, outs: L.outs, bf: L.bf, k: L.k, bb: L.bb, h: L.h, pitches: L.pitches });
+    if (nameQuality(L.display) > nameQuality(P.display)) P.display = L.display; P.last ??= L.date; if (P.recent.length < 4) P.recent.push({ date: L.date, started: L.started, outs: L.outs, bf: L.bf, k: L.k, bb: L.bb, h: L.h, pitches: L.pitches });
     byName.set(L.name, P);
   }
   const staff = [...byName.values()].map((P) => {
@@ -29,7 +33,7 @@ export async function opponentStaff(seo, beforeDate) {
     const sw = xs.reduce((s, p) => s + p.swings, 0), wh = xs.reduce((s, p) => s + p.whiffs, 0);
     const ks = xs.filter((p) => /^K/.test(p.outcome));
     return {
-      name: P.display || display(P.name), key: P.name, apps: P.apps, starts: P.starts, ip: ip(P.outs), last: P.last, recent: P.recent,
+      name: nameQuality(P.display) >= 2 ? P.display : display(P.name), key: P.name, keys: P.keys, apps: P.apps, starts: P.starts, ip: ip(P.outs), last: P.last, recent: P.recent,
       startWeekdays: [...new Set(P.startDays.slice(0, 6).map((d) => WD[weekday(d)]))],
       kPct: pct(P.k, P.bf), bbPct: pct(P.bb, P.bf), hPer9: P.outs ? Math.round((P.h / (P.outs / 3)) * 9 * 10) / 10 : null, hr: P.hr,
       pitchesPerBF: P.bf ? Math.round((P.pitches / P.bf) * 10) / 10 : null,
@@ -38,6 +42,20 @@ export async function opponentStaff(seo, beforeDate) {
     };
   });
   return staff.sort((a, b) => b.starts - a.starts || b.ip - a.ip);
+}
+
+/** Best name to show: "Wylan Moss" (3) over "W. Moss" (2) over "Moss" (1) over a stored key like "moss|w" (0). */
+export function nameQuality(d) {
+  if (!d || d.includes("|")) return 0;
+  if (!d.includes(" ")) return 1;
+  return /^[A-Za-z]\.?\s/.test(d) ? 2 : 3;
+}
+
+/** "last|" keys that belong to exactly one "last|x" key in the same list. */
+export function aliases(keys) {
+  const full = [...new Set(keys)].filter((k) => !k.endsWith("|")), out = {};
+  for (const k of new Set(keys)) if (k.endsWith("|")) { const m = full.filter((f) => f.startsWith(k)); if (m.length === 1) out[k] = m[0]; }
+  return out;
 }
 
 /** Who is likely to start on the date of the game: the pitcher who started their most recent game on that weekday. */
@@ -51,17 +69,24 @@ export function likelyStarter(staff, gameDate) {
 }
 
 /** How a pitcher's habits meet a hitter's: plain observations from both sets of numbers, no advice. */
-export function matchup(p, m) {
+export const matchup = (p, m) => matchupKeyed(p, m).map((n) => n.text);
+
+/**
+ * Same observations with a key per kind, plus the pitcher-only half of each one (`about`), so a team view can
+ * say "he throws first-pitch strikes 63% of the time" once instead of under every hitter it applies to.
+ */
+export function matchupKeyed(p, m) {
   if (!p || !m) return [];
-  const out = [], f = (x) => `${Math.round(x)}%`;
+  const out = [], f = (x) => `${Math.round(x)}%`, add = (key, text, about) => out.push({ key, text, about });
   if (p.fpStrikePct >= 62 && m.fpSwingPct != null && m.fpSwingPct <= 25)
-    out.push(`He throws a first-pitch strike ${f(p.fpStrikePct)} of the time, and you take the first pitch ${f(100 - m.fpSwingPct)} of the time, so expect to start 0-1 often.`);
-  if (p.whiffPct >= 24 && m.whiffPct >= 22) out.push(`He gets misses on ${f(p.whiffPct)} of swings against him; you miss on ${f(m.whiffPct)} of yours.`);
-  else if (p.whiffPct != null && p.whiffPct <= 16 && m.whiffPct != null) out.push(`Hitters put the ball in play against him: only ${f(p.whiffPct)} of swings miss.`);
-  if (p.kLookingShare >= 35 && m.klShare >= 35 && m.k >= 6) out.push(`${f(p.kLookingShare)} of his strikeouts are called; ${f(m.klShare)} of yours are too.`);
-  if (p.gbPct >= 50 && p.bip >= 20 && m.batted.gbPct >= 45) out.push(`He keeps the ball on the ground (${f(p.gbPct)} of balls in play), and ${f(m.batted.gbPct)} of yours are grounders.`);
-  if (p.bbPct >= 12 && m.fpSwingPct >= 40) out.push(`He walks ${f(p.bbPct)} of the hitters he faces, and you swing at the first pitch ${f(m.fpSwingPct)} of the time.`);
-  if (p.pitchesPerBF >= 4.2) out.push(`His plate appearances run long: ${p.pitchesPerBF} pitches per batter.`);
+    add("fp", `He throws a first-pitch strike ${f(p.fpStrikePct)} of the time, and you take the first pitch ${f(100 - m.fpSwingPct)} of the time, so expect to start 0-1 often.`,
+      `Throws a first-pitch strike ${f(p.fpStrikePct)} of the time`, `take the first pitch ${f(100 - m.fpSwingPct)} of the time`);
+  if (p.whiffPct >= 24 && m.whiffPct >= 22) add("whiff", `He gets misses on ${f(p.whiffPct)} of swings against him; you miss on ${f(m.whiffPct)} of yours.`, `Gets misses on ${f(p.whiffPct)} of swings`, `miss on ${f(m.whiffPct)} of swings`);
+  else if (p.whiffPct != null && p.whiffPct <= 16 && m.whiffPct != null) add("contact", `Hitters put the ball in play against him: only ${f(p.whiffPct)} of swings miss.`, `Hitters make contact: only ${f(p.whiffPct)} of swings miss`);
+  if (p.kLookingShare >= 35 && m.klShare >= 35 && m.k >= 6) add("kl", `${f(p.kLookingShare)} of his strikeouts are called; ${f(m.klShare)} of yours are too.`, `${f(p.kLookingShare)} of his strikeouts are called`, `${f(m.klShare)} of strikeouts called`);
+  if (p.gbPct >= 50 && p.bip >= 20 && m.batted.gbPct >= 45) add("gb", `He keeps the ball on the ground (${f(p.gbPct)} of balls in play), and ${f(m.batted.gbPct)} of yours are grounders.`, `Keeps the ball on the ground (${f(p.gbPct)} of balls in play)`, `${f(m.batted.gbPct)} grounders`);
+  if (p.bbPct >= 12 && m.fpSwingPct >= 40) add("bb", `He walks ${f(p.bbPct)} of the hitters he faces, and you swing at the first pitch ${f(m.fpSwingPct)} of the time.`, `Walks ${f(p.bbPct)} of hitters`, `swing at the first pitch ${f(m.fpSwingPct)} of the time`);
+  if (p.pitchesPerBF >= 4.2) add("long", `His plate appearances run long: ${p.pitchesPerBF} pitches per batter.`, `Long plate appearances: ${p.pitchesPerBF} pitches per batter`);
   return out;
 }
 

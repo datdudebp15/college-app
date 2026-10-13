@@ -29,6 +29,12 @@
     },
     "api/player.js": {
       "maxDuration": 60
+    },
+    "api/scout.js": {
+      "maxDuration": 60
+    },
+    "api/today.js": {
+      "maxDuration": 30
     }
   }
 }
