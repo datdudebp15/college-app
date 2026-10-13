@@ -7,7 +7,7 @@ import { clean, year, player } from "./_util.js";
 //                  Players get only their own record and no staff list.
 // POST         (admin) { name, shortName, season, coachName } -> creates the team and its first coach,
 //                  returns { team, code } where code is the coach's access code (shown once).
-// PATCH ?id=T  (coach) { name, shortName, season }
+// PATCH ?id=T  (coach) { name, shortName, season, ncaaSeo }
 export default handler(async (req, res, user, body) => {
   if (req.method === "POST") {
     if (!user.is_admin) return res.status(403).json({ error: "admin_only" });
@@ -26,7 +26,7 @@ export default handler(async (req, res, user, body) => {
 
   if (req.method === "GET") {
     const t = await one(`SELECT * FROM teams WHERE id = $1`, [teamId]);
-    const team = { id: t.id, name: t.name, shortName: t.short_name, season: t.season, demo: t.demo, rosterUrl: t.roster_url };
+    const team = { id: t.id, name: t.name, shortName: t.short_name, season: t.season, demo: t.demo, rosterUrl: t.roster_url, ncaaSeo: t.ncaa_seo };
     if (!isCoach(me)) {
       const p = await one(`SELECT * FROM players WHERE id = $1 AND team_id = $2`, [me.playerId, teamId]);
       return res.json({ team, me, players: p ? [player(p)] : [], staff: null });
@@ -49,8 +49,10 @@ export default handler(async (req, res, user, body) => {
     if (name === "") return res.status(400).json({ error: "name" });
     const season = body.season === undefined ? undefined : year(body.season);
     if (season === null) return res.status(400).json({ error: "season" });
-    await query(`UPDATE teams SET name = COALESCE($2, name), short_name = COALESCE($3, short_name), season = COALESCE($4, season) WHERE id = $1`,
-      [teamId, name ?? null, body.shortName === undefined ? null : clean(body.shortName, 24), season ?? null]);
+    const ncaa = body.ncaaSeo === undefined ? undefined : String(body.ncaaSeo).trim().toLowerCase();
+    if (ncaa !== undefined && ncaa !== "" && !/^[a-z0-9-]{2,60}$/.test(ncaa)) return res.status(400).json({ error: "ncaa" });
+    await query(`UPDATE teams SET name = COALESCE($2, name), short_name = COALESCE($3, short_name), season = COALESCE($4, season), ncaa_seo = CASE WHEN $5::text IS NULL THEN ncaa_seo ELSE NULLIF($5, '') END WHERE id = $1`,
+      [teamId, name ?? null, body.shortName === undefined ? null : clean(body.shortName, 24), season ?? null, ncaa ?? null]);
     return res.json({ ok: true });
   }
 

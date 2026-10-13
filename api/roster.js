@@ -22,13 +22,13 @@ export default handler(async (req, res, user, body) => {
   let added = 0, updated = 0;
   for (const p of keep) {
     const cur = await one(`SELECT id FROM players WHERE team_id = $1 AND source = 'site' AND source_id = $2`, [teamId, p.sourceId]);
-    const vals = [p.first.slice(0, 40), p.last.slice(0, 40), /^\d{1,2}$/.test(p.jersey || "") ? p.jersey : null, p.pos, p.bats, p.throws, p.classYear];
+    const vals = [p.first.slice(0, 40), p.last.slice(0, 40), /^\d{1,2}$/.test(p.jersey || "") ? p.jersey : null, p.pos, p.bats, p.throws, p.classYear, p.prevSchool];
     if (cur) {
-      await query(`UPDATE players SET first_name = $2, last_name = $3, jersey = $4, pos = $5, bats = $6, throws = $7, class_year = $8, active = true WHERE id = $1`, [cur.id, ...vals]);
+      await query(`UPDATE players SET first_name = $2, last_name = $3, jersey = $4, pos = $5, bats = $6, throws = $7, class_year = $8, prev_school = $9, active = true WHERE id = $1`, [cur.id, ...vals]);
       updated++;
     } else {
-      await query(`INSERT INTO players (id, team_id, first_name, last_name, jersey, pos, bats, throws, class_year, source, source_id)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'site', $10)`, [newId("plr"), teamId, ...vals, p.sourceId]);
+      await query(`INSERT INTO players (id, team_id, first_name, last_name, jersey, pos, bats, throws, class_year, prev_school, source, source_id)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'site', $11)`, [newId("plr"), teamId, ...vals, p.sourceId]);
       added++;
     }
   }

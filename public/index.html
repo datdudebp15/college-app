@@ -194,6 +194,49 @@ body.sheet-open #sheet{transform:translateY(0)}
   transition:transform var(--spring-d) var(--spring);pointer-events:none}
 #toast.on{transform:translate(-50%,0)}
 
+/* player profile */
+.card h4{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:6px 0 -4px}
+.stats small{display:block;font-size:11.5px;color:var(--muted);font-weight:600;margin-top:2px}
+.nextline{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.nextline b{font-size:22px;font-weight:800;letter-spacing:-.03em}
+.nextline span{color:var(--muted);font-weight:600}
+.card.next{background:linear-gradient(135deg,var(--accent-soft),transparent 70%),var(--card)}
+.note.preview{display:flex;align-items:center;justify-content:space-between;gap:12px;background:color-mix(in srgb,var(--ember) 14%,transparent);color:var(--ink)}
+.note.preview b{font-weight:800}
+.lede{margin:0;font-size:18px;font-weight:800;letter-spacing:-.02em}
+.tr{margin:0;color:var(--ink-2)} .tr span{color:var(--accent);font-weight:800;margin-right:4px}
+.by{margin:0;font-size:12px;font-weight:600;color:var(--muted)}
+.pats{display:flex;flex-direction:column;gap:8px}
+.pat{display:grid;grid-template-columns:26px 1fr;gap:12px;background:var(--card-2);border-radius:18px;padding:14px}
+.pat .pi{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;color:#fff;background:var(--accent)}
+.pat.g .pi{background:var(--good)} .pat.y .pi{background:var(--warn)} .pat.r .pi{background:var(--bad)}
+.pat b{font-weight:800;letter-spacing:-.015em} .pat p{margin:3px 0 0;font-size:14.5px;color:var(--ink-2)}
+.abs{display:flex;flex-direction:column;gap:2px;background:var(--card-2);border-radius:18px;padding:6px 12px}
+.ab{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center;padding:8px 0}
+.ab+.ab{border-top:1px solid var(--line)}
+.ab .inn{width:26px;height:26px;border-radius:9px;display:grid;place-items:center;font-size:12px;font-weight:800;background:var(--fill);color:var(--muted)}
+.ab b{display:block;font-weight:700;font-size:15px} .ab .meta{font-size:12.5px;color:var(--muted)}
+.ab.hit .inn{background:var(--good-soft);color:var(--good)} .ab.on .inn{background:var(--accent-soft);color:var(--accent)}
+.seq{display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end}
+.seq i,.seqkey i{font:700 11px/1 var(--mono);font-style:normal;width:20px;height:20px;border-radius:6px;display:inline-grid;place-items:center;background:var(--fill);color:var(--muted)}
+.seq i.k,.seqkey i.k{background:var(--bad-soft);color:var(--bad)} .seq i.s,.seqkey i.s{background:var(--bad);color:#fff}
+.seq i.f,.seqkey i.f{background:rgba(245,158,11,.16);color:var(--warn)} .seq i.x,.seqkey i.x{background:var(--accent);color:var(--accent-ink)}
+.seqkey{margin:0;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+.seqkey i{margin-right:3px;width:17px;height:17px;font-size:10px}
+.pitcher{background:var(--card-2);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.pitcher .ph{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pitcher .ph b{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+@media (min-width:560px){.mini{grid-template-columns:repeat(6,1fr)}}
+.mini span{font-size:11px;color:var(--muted);font-weight:600;line-height:1.2} .mini b{display:block;font-size:15px;color:var(--ink);font-weight:800}
+.tbl{overflow-x:auto;border-radius:16px;background:var(--card-2)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:480px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap} th{font-size:12px;color:var(--muted);font-weight:700}
+td.n{font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:0}
+.skel{height:18px;border-radius:8px;background:linear-gradient(90deg,var(--fill-2),var(--fill),var(--fill-2));background-size:200% 100%;animation:shimmer 1.2s linear infinite}
+.skel.short{width:60%}
+@keyframes shimmer{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}#field i{animation:none}}
 </style>
 </head>
@@ -217,7 +260,7 @@ const ls = { get: (k) => { try { return localStorage.getItem(k); } catch { retur
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const POS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "OF", "IF", "UT", "DH", "P"];
 const CLASS = ["Fr", "So", "Jr", "Sr", "Gr", "RS Fr", "RS So", "RS Jr", "RS Sr"];
-const ERR = { name: "First and last name are needed.", last_coach: "A team needs at least one coach.", coach_only: "Only coaches can do that.", season: "Season should be a year, like 2026.", missing: "Fill in the team, season and head coach.", no_database: "The database isn't connected yet.", bad_url: "That doesn't look like a public roster page. Paste the full https:// link.", not_roster: "That link isn't a roster page. Open your team's roster on the school site and copy that link.", unsupported_site: "That school's site isn't supported yet. Add players by hand for now.", no_roster: "No players found on that page.", fetch_failed: "Couldn't open that page. Check the link and try again.", server: "Something went wrong. Try again." };
+const ERR = { name: "First and last name are needed.", last_coach: "A team needs at least one coach.", coach_only: "Only coaches can do that.", season: "Season should be a year, like 2026.", preview_only: "This is a preview, so nothing can be changed. Exit the preview first.", ncaa: "The NCAA team is the last part of its ncaa.com address, like virginia-tech.", ncaa_unavailable: "ncaa.com isn't answering right now. Try again in a few minutes.", missing: "Fill in the team, season and head coach.", no_database: "The database isn't connected yet.", bad_url: "That doesn't look like a public roster page. Paste the full https:// link.", not_roster: "That link isn't a roster page. Open your team's roster on the school site and copy that link.", unsupported_site: "That school's site isn't supported yet. Add players by hand for now.", no_roster: "No players found on that page.", fetch_failed: "Couldn't open that page. Check the link and try again.", server: "Something went wrong. Try again." };
 const I = {
   back: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
   x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
@@ -255,7 +298,7 @@ const haptic = () => { try { if (navigator.vibrate && (!navigator.userActivation
 async function api(name, { method = "GET", query = {}, body } = {}) {
   const qs = new URLSearchParams(query).toString();
   let r;
-  try { r = await fetch(`/api/${name}${qs ? "?" + qs : ""}`, { method, cache: "no-store", headers: { Authorization: "Bearer " + (S.token || ""), ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined }); }
+  try { r = await fetch(`/api/${name}${qs ? "?" + qs : ""}`, { method, cache: "no-store", headers: { Authorization: "Bearer " + (S.token || ""), ...(S.viewAs ? { "X-View-As": S.viewAs.role + (S.viewAs.playerId ? ":" + S.viewAs.playerId : "") } : {}), ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined }); }
   catch { throw { code: "offline" }; }
   const j = await r.json().catch(() => ({}));
   if (r.status === 401) { signOut("That code isn't working. It may have been replaced; ask your coach for a new one."); throw { code: "sign_in" }; }
@@ -280,7 +323,7 @@ async function openTeam(id) {
   try { S.team = await api("team", { query: { id } }); }
   catch (e) { if (e.code === "not_found") { ls.set("oc-team", null); showTeams(); } return; }
   ls.set("oc-team", id); S.view = "team";
-  S.tab = coach() ? (ls.get("oc-tab-c") || "roster") : (ls.get("oc-tab-p") || "me");
+  S.tab = S.viewAs ? (coach() ? "roster" : "me") : coach() ? (ls.get("oc-tab-c") || "roster") : (ls.get("oc-tab-p") || "me");
   if (!tabList().some((t) => t[0] === S.tab)) S.tab = tabList()[0][0];
   buildTabs(); renderPage("enter");
 }
@@ -288,7 +331,16 @@ async function reloadTeam() { S.team = await api("team", { query: { id: S.team.t
 const coach = () => S.team && S.team.me.role === "coach";
 const playerById = (id) => S.team.players.find((p) => p.id === id);
 const fullName = (p) => `${p.first} ${p.last}`;
-const manyTeams = () => S.me && (S.me.teams.length > 1 || S.me.user.admin);
+const manyTeams = () => S.me && !S.viewAs && (S.me.teams.length > 1 || S.me.user.admin);
+const isAdmin = () => S.me && S.me.user.admin && !S.viewAs;
+async function startPreview(role, playerId, name) {
+  closeSheet(true); Object.keys(PROF).forEach((k) => delete PROF[k]);
+  S.viewAs = { role, playerId: playerId || null, name }; await openTeam(S.team.team.id); scrollTo(0, 0); toast(`Previewing as ${name}`);
+}
+async function exitPreview() {
+  Object.keys(PROF).forEach((k) => delete PROF[k]); const id = S.team.team.id;
+  S.viewAs = null; await openTeam(id); scrollTo(0, 0);
+}
 
 /* ---------- screens ---------- */
 function showSignin() {
@@ -320,12 +372,13 @@ function tabList() {
 }
 function renderPage(anim) {
   const team = S.team.team, short = team.shortName || team.name;
-  const left = manyTeams() ? `<button class="gbtn glass icon" data-act="teams" aria-label="All teams">${I.back}</button>` : "";
+  const left = S.viewAs ? `<button class="gbtn glass" data-act="exit-preview">${I.x}Exit preview</button>` : manyTeams() ? `<button class="gbtn glass icon" data-act="teams" aria-label="All teams">${I.back}</button>` : "";
   const right = coach() && S.tab === "roster" ? `<button class="gbtn glass icon" data-act="sheet" data-s="add" aria-label="Add a player">${I.plus}</button>`
     : coach() && S.tab === "staff" ? `<button class="gbtn glass icon" data-act="sheet" data-s="addcoach" aria-label="Add a coach">${I.plus}</button>` : "";
   const titles = { roster: "Roster", staff: "Staff", team: "Team", me: S.team.players[0] ? S.team.players[0].first : "Me", account: "Account" };
   topBar(left, `${titles[S.tab]} · ${short}`, right);
-  const demo = team.demo ? `<div class="note">Demo team. Every player and coach here is fictional.</div>` : "";
+  const demo = (S.viewAs ? `<div class="note preview"><span>Previewing as <b>${esc(S.viewAs.name)}</b>. This is exactly what ${S.viewAs.role === "coach" ? "a coach" : "he"} sees. Read-only.</span><button class="btn sm" data-act="exit-preview">Exit</button></div>` : "")
+    + (team.demo ? `<div class="note">Demo team. Every player and coach here is fictional.</div>` : "");
   const body = { roster: rosterPage, staff: staffPage, team: teamPage, me: mePage, account: accountPage }[S.tab]();
   setPage(demo ? body.replace(/^(<div class="lt">[\s\S]*?<\/div>)/, `$1${demo}`) : body, anim);
 }
@@ -357,7 +410,13 @@ function teamPage() {
       <div class="stats"><div><b>${esc(t.season)}</b><span>Season</span></div><div><b>${S.team.players.length}</b><span>Players</span></div>
       <div><b>${S.team.staff.length}</b><span>Coaches</span></div><div><b>${S.team.players.filter((p) => p.access === "active").length}</b><span>Players signed in</span></div></div></section>
     <section class="card"><div class="hd"><h3>Roster from your school's site</h3></div><p class="muted" style="margin:0">${t.rosterUrl ? `Last imported from ${esc(new URL(t.rosterUrl).hostname)}. Import again to pick up new numbers, positions and classes.` : "Bring in your hitters with their numbers, positions, classes and bats/throws."}</p>
-      <button class="btn soft" data-act="sheet" data-s="import">${t.rosterUrl ? "Import again" : "Import roster"}</button></section>` + accountCard();
+      <button class="btn soft" data-act="sheet" data-s="import">${t.rosterUrl ? "Import again" : "Import roster"}</button></section>
+    ${isAdmin() ? `<section class="card"><div class="hd"><h3>Preview the app</h3><span class="chip">Admin</span></div>
+      <p class="muted" style="margin:0">See exactly what a coach or a player on this team sees. Nothing can be changed while previewing.</p>
+      <div class="actions"><button class="btn soft" data-act="preview-coach">As a coach</button><button class="btn soft" data-act="sheet" data-s="previewpick">As a player</button></div></section>` : ""}
+    <section class="card"><div class="hd"><h3>NCAA games</h3><button class="link" data-act="sheet" data-s="editteam">Change</button></div>
+      <p class="muted" style="margin:0">${t.ncaaSeo ? `Linked to <b style="color:var(--ink)">${esc(t.ncaaSeo)}</b> on ncaa.com. Box scores and play-by-play update every night; this brings them in now.` : "Not linked yet. Updating finds your team on ncaa.com by its name."}</p>
+      <button class="btn soft" data-act="ncaa-sync">Update games now</button></section>` + accountCard();
 }
 function accountCard() {
   return `<section class="card"><div class="hd"><h3>Signed in as ${esc(S.me.user.name)}</h3></div>
@@ -371,8 +430,99 @@ function facts(p) {
 function mePage() {
   const p = S.team.players[0];
   if (!p) return lt("Me", "") + `<div class="card"><p class="muted" style="margin:0">Your coach hasn't linked your player page yet.</p></div>`;
-  return lt(p.first, esc(S.team.team.name)) + `<section class="card"><h3>${esc(fullName(p))}</h3>${facts(p)}</section>
-    <section class="card"><h3>Your season and at-bats</h3><p class="muted" style="margin:0">Your last season, what you do well, what to work on, and a grade for every at-bat will show here once your coaches start charting.</p></section>`;
+  return lt(p.first, esc(S.team.team.name)) + `<section class="card"><h3>${esc(fullName(p))}</h3>${facts(p)}</section>` + profileSections(p.id, true);
+}
+
+/* ---------- player profile: next game, opponent, last game, season, year over year ---------- */
+const PROF = {};
+function loadProfile(id, write) {
+  const T = S.team.team.id, k = T + "|" + id;
+  if (!write && PROF[k] && (PROF[k].loading || PROF[k].data)) return PROF[k];
+  PROF[k] = { loading: true, writing: !!write, data: PROF[k] && PROF[k].data };
+  api("player", { method: write ? "POST" : "GET", query: { team: T, id } })
+    .then((d) => { PROF[k] = { data: d }; if (write) toast("Write-ups updated"); })
+    .catch((e) => { PROF[k] = { error: e.code || "server", data: PROF[k].data }; })
+    .finally(() => { if (S.sheet && S.sheet.kind === "player" && S.sheet.id === id) renderSheet(false); else if (S.view === "team" && S.tab === "me") renderPage(); });
+  return PROF[k];
+}
+const OUTC = { KL: "Struck out looking", KS: "Struck out swinging", K: "Struck out", BB: "Walk", IBB: "Intentional walk", HBP: "Hit by pitch", "1B": "Single", "2B": "Double", "3B": "Triple", HR: "Home run",
+  GO: "Ground out", GDP: "Grounded into double play", FO: "Fly out", LO: "Line out", PO: "Pop up", FFO: "Foul out", SF: "Sacrifice fly", SH: "Sacrifice bunt", FC: "Fielder's choice", ROE: "Reached on error", CI: "Catcher's interference", LDP: "Lined into double play", FDP: "Flied into double play", DP: "Double play", RE: "Reached", OUT: "Out" };
+const HITS = new Set(["1B", "2B", "3B", "HR"]), ONBASE = new Set(["BB", "IBB", "HBP", "1B", "2B", "3B", "HR", "ROE", "CI"]);
+const f3 = (x) => (x == null ? "–" : Number(x).toFixed(3).replace(/^0/, "")), pc = (x) => (x == null ? "–" : Math.round(x) + "%");
+const byLine = (n) => n ? `<p class="by">${n.by === "claude" ? "Written by Claude from the numbers" : "From the numbers"}${n.stale ? " · update coming tonight" : ""}</p>` : "";
+const gameDay = (d) => new Date(d + "T12:00:00Z").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+function seqChips(pa) {
+  const L = { B: ["b", "Ball"], K: ["k", "Called strike"], S: ["s", "Swing and miss"], F: ["f", "Foul"] };
+  const inPlay = !/^(K|KL|KS|BB|IBB|HBP|CI)$/.test(pa.outcome);
+  return `<span class="seq" aria-label="Pitches: ${[...pa.seq].map((c) => L[c][1]).join(", ")}${inPlay ? ", put in play" : ""}">${[...pa.seq].map((c) => `<i class="${L[c][0]}">${c}</i>`).join("")}${inPlay ? `<i class="x">X</i>` : ""}</span>`;
+}
+function profileSections(id, self) {
+  const st = loadProfile(id), d = st.data;
+  if (!d) return st.error ? `<section class="card"><p class="muted" style="margin:0">Couldn't load ${self ? "your" : "his"} stats right now. Try again in a minute.</p></section>`
+    : `<section class="card"><div class="skel"></div><div class="skel short"></div></section>`;
+  const P = d.profile, N = d.notes || {}, you = self ? "you" : "he", your = self ? "your" : "his";
+  if (!P.ready) return `<section class="card"><h3>Season</h3><p class="muted" style="margin:0">Link the team to its NCAA team on the Team tab to bring in games and stats.</p></section>`;
+  const out = [];
+
+  // up next
+  const nx = P.next;
+  out.push(`<section class="card next"><div class="hd"><h3>Up next</h3>${nx ? `<span class="chip invited">${esc(gameDay(nx.date))}</span>` : ""}</div>${nx
+    ? `<div class="nextline"><b>${nx.home ? "vs" : "at"} ${esc(nx.opponentName)}</b><span>${esc(nx.time || "")}${nx.time ? " · " : ""}${nx.home ? "Home" : "Away"}</span></div>`
+    : `<p class="muted" style="margin:0">The ${S.team.team.season} schedule isn't posted yet. ${self ? "Your" : "His"} next game shows here as soon as it is.</p>`}</section>`);
+
+  // next opponent
+  const o = P.opponent;
+  if (o && !o.empty) {
+    const attack = (name) => ((N.opponent && N.opponent.pitchers) || []).find((x) => x.name === name);
+    const pcard = (s) => `<div class="pitcher"><div class="ph"><b>${esc(s.name)}</b><span class="chip">${s.role === "starter" ? "Likely starter" : "Bullpen"}</span></div>
+      ${s.why ? `<p class="small muted" style="margin:0">${esc(s.why[0].toUpperCase() + s.why.slice(1))}.</p>` : ""}
+      <div class="mini">${[["IP", s.ip], ["K%", pc(s.kPct)], ["BB%", pc(s.bbPct)], ["1st-pitch strike", pc(s.fpStrikePct)], ["Whiff", pc(s.whiffPct)], ["Ground balls", pc(s.gbPct)]].map(([l, v]) => `<span><b>${esc(v)}</b>${esc(l)}</span>`).join("")}</div>
+      ${attack(s.name) ? `<p style="margin:0">${esc(attack(s.name).attack)}</p>` : s.notes.length ? `<p style="margin:0">${esc(s.notes.join(" "))}</p>` : ""}
+      ${s.faced && s.faced.length ? `<p class="small muted" style="margin:0">${self ? "You've" : "He's"} faced him ${s.faced.length} time${s.faced.length === 1 ? "" : "s"}: ${esc(s.faced.map((f) => (OUTC[f.outcome] || f.outcome).toLowerCase()).join(", "))}.</p>` : ""}</div>`;
+    out.push(`<section class="card"><div class="hd"><h3>${esc(o.name)} pitchers</h3></div>
+      ${N.opponent ? `<p style="margin:0">${esc(N.opponent.overview)}</p>` : ""}
+      ${o.starter ? pcard(o.starter) : ""}${o.bullpen.map(pcard).join("")}
+      <p class="small muted" style="margin:0">From their recent box scores and play-by-play. Pitch types, velocity and which hand they throw with come with TrackMan.</p>${byLine(N.opponent)}</section>`);
+  } else if (o && o.empty) out.push(`<section class="card"><h3>${esc(o.name)}</h3><p class="muted" style="margin:0">No games from them yet this season.</p></section>`);
+
+  // last game
+  const g = P.lastGame;
+  if (g) {
+    const n = N.postgame;
+    out.push(`<section class="card"><div class="hd"><h3>Last game</h3><span class="muted small">${esc(gameDay(g.date))}</span></div>
+      <div class="nextline"><b>${g.home ? "vs" : "at"} ${esc(g.opponent)}</b><span>${g.us > g.them ? "W" : g.us < g.them ? "L" : "T"} ${esc(g.us)}-${esc(g.them)}</span></div>
+      ${n ? `<p class="lede">${esc(n.headline)}</p><p style="margin:0">${esc(n.how)}</p>${n.workOn ? `<p class="tr"><span>Work on</span> ${esc(n.workOn)}</p>` : ""}` : ""}
+      <div class="abs">${g.pas.map((a) => `<div class="ab ${HITS.has(a.outcome) ? "hit" : ONBASE.has(a.outcome) ? "on" : ""}"><span class="inn">${esc(a.inning)}</span><div><b>${esc(OUTC[a.outcome] || a.outcome)}</b><span class="meta">${a.pitcher ? "vs " + esc(a.pitcher) : ""}</span></div>${seqChips(a)}</div>`).join("")}</div>
+      <p class="seqkey"><i class="b">B</i>ball <i class="k">K</i>called strike <i class="s">S</i>swing and miss <i class="f">F</i>foul <i class="x">X</i>in play</p>${byLine(n)}</section>`);
+  }
+
+  // season
+  const cur = P.seasons[0];
+  if (cur) {
+    const m = cur.metrics, n = N.season, t = cur.team;
+    const pat = (x, good) => `<div class="pat ${good ? "g" : x.sev === "bad" ? "r" : "y"}"><span class="pi" aria-hidden="true">${good ? "✓" : "!"}</span><div><b>${esc(x.title)}</b><p>${esc(x.detail)}</p></div></div>`;
+    const strengths = n ? n.strengths : cur.flags.filter((f) => f.sev === "good"), improve = n ? n.improve : cur.flags.filter((f) => f.sev === "bad" || f.sev === "warn");
+    out.push(`<section class="card"><div class="hd"><h3>${esc(cur.season)} season</h3><span class="muted small">${esc(cur.schoolName)} · ${esc(cur.games)} games</span></div>
+      ${n ? `<p style="margin:0">${esc(n.summary)}</p>` : ""}
+      <div class="stats">${[["AVG", f3(m.avg), f3(t.avg)], ["OBP", f3(m.obp), f3(t.obp)], ["SLG", f3(m.slg), f3(t.slg)], ["Strikeouts", pc(m.kPct), pc(t.kPct)], ["Walks", pc(m.bbPct), pc(t.bbPct)], ["Swing and miss", pc(m.whiffPct), pc(t.whiffPct)], ["Swings at 1st pitch", pc(m.fpSwingPct), pc(t.fpSwingPct)], ["Ground balls", pc(m.batted.gbPct), pc(t.gbPct)]]
+        .map(([l, v, tv]) => `<div><b>${esc(v)}</b><span>${esc(l)}</span><small>Team ${esc(tv)}</small></div>`).join("")}</div>
+      <p class="small muted" style="margin:0">${esc(m.pa)} plate appearances · ${esc(m.hr)} HR · ${esc(m.pitchesPerPA)} pitches per plate appearance. Strikeouts and walks are per plate appearance; swing and miss is per swing.</p>
+      ${strengths.length ? `<h4>What ${you} do${self ? "" : "es"} well</h4><div class="pats">${strengths.map((x) => pat(x, true)).join("")}</div>` : ""}
+      ${improve.length ? `<h4>What to improve</h4><div class="pats">${improve.map((x) => pat(x, false)).join("")}</div>` : ""}
+      ${!strengths.length && !improve.length ? `<p class="muted small" style="margin:0">${m.pa < 40 ? `Not enough plate appearances yet to call anything a pattern.` : `Nothing stands out from the team averages.`}</p>` : ""}
+      ${byLine(n)}</section>`);
+  } else out.push(`<section class="card"><h3>Season</h3><p class="muted" style="margin:0">No college plate appearances found for ${self ? "you" : "him"} in the NCAA play-by-play yet.</p></section>`);
+
+  // year over year
+  if (P.seasons.length > 1) {
+    const n = N.season;
+    out.push(`<section class="card"><div class="hd"><h3>Year over year</h3></div>${n && n.change ? `<p style="margin:0">${esc(n.change)}</p>` : ""}
+      <div class="tbl"><table><thead><tr><th>Season</th><th>PA</th><th>AVG/OBP/SLG</th><th>K%</th><th>BB%</th><th>Whiff</th><th>GB</th></tr></thead><tbody>
+      ${P.seasons.map((s) => `<tr><td>${esc(s.season)}${s.school !== P.ncaaTeam ? `<span class="muted small"> · ${esc(s.schoolName)}</span>` : ""}</td><td class="n">${esc(s.metrics.pa)}</td><td class="n">${f3(s.metrics.avg)}/${f3(s.metrics.obp)}/${f3(s.metrics.slg)}</td><td class="n">${pc(s.metrics.kPct)}</td><td class="n">${pc(s.metrics.bbPct)}</td><td class="n">${pc(s.metrics.whiffPct)}</td><td class="n">${pc(s.metrics.batted.gbPct)}</td></tr>`).join("")}
+      </tbody></table></div></section>`);
+  }
+  if (!self && coach() && d.claude) out.push(`<button class="btn soft" data-act="rewrite" data-id="${esc(id)}"${st.writing ? " disabled" : ""}>${st.writing ? "Claude is writing…" : "Rewrite with Claude now"}</button>`);
+  return out.join("");
 }
 function accountPage() { return lt("Account", "") + accountCard(); }
 
@@ -392,7 +542,7 @@ function placeLens(animate) {
 function selectTab(k) {
   if (k === S.tab) { scrollTo({ top: 0, behavior: REDUCED ? "auto" : "smooth" }); return; }
   const L = tabList().map((t) => t[0]), dir = L.indexOf(k) > L.indexOf(S.tab) ? "from-r" : "from-l";
-  S.tab = k; ls.set(coach() ? "oc-tab-c" : "oc-tab-p", k); haptic();
+  S.tab = k; if (!S.viewAs) ls.set(coach() ? "oc-tab-c" : "oc-tab-p", k); haptic();
   TABS.querySelectorAll("button").forEach((b) => b.dataset.tab === k ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
   const lens = $(".lens", TABS); lens.classList.add("stretch"); setTimeout(() => lens.classList.remove("stretch"), 180);
   placeLens(true); scrollTo(0, 0); renderPage(dir);
@@ -482,7 +632,8 @@ const SHEETS = {
     const p = playerById(s.id); if (!p) return ["Player", ""];
     const acc = p.access === "active" ? "He has signed in." : p.access === "invited" ? "He has a code but hasn't signed in yet." : "He doesn't have a sign-in yet.";
     return [fullName(p), `<section class="card"><div class="hd"><h3>Player</h3><button class="link" data-act="sheet" data-s="edit" data-id="${esc(p.id)}">Edit</button></div>${facts(p)}</section>
-      <section class="card"><h3>Season and at-bats</h3><p class="muted" style="margin:0">His last college season, strengths and weaknesses, and graded at-bats will show here.</p></section>
+      ${isAdmin() ? `<button class="btn soft" data-act="preview-player" data-id="${esc(p.id)}">See what ${esc(p.first)} sees</button>` : ""}
+      ${profileSections(p.id, false)}
       <section class="card"><div class="hd"><h3>Sign-in</h3>${accessChip(p.access)}</div><p style="margin:0">${acc} With a code he sees only his own page, never his teammates'.</p>
         <button class="btn soft" data-act="pcode" data-id="${esc(p.id)}">${p.access === "none" ? "Make his sign-in code" : "Make a new code"}</button></section>
       <section class="card"><h3>Remove from roster</h3><p class="muted" style="margin:0">His history stays, and his sign-in stops working.</p>
@@ -497,6 +648,7 @@ const SHEETS = {
       <p class="muted" style="margin:0">A new code turns the old one off.</p><button class="btn soft" data-act="scode" data-id="${esc(c.id)}">Make a new code</button></section>
       ${S.team.staff.length > 1 ? `<section class="card"><h3>Remove from staff</h3><div class="actions">${S.confirm === c.id ? `<button class="btn danger" data-act="sdel" data-id="${esc(c.id)}">Remove ${esc(c.name)}</button><button class="btn soft" data-act="unconfirm">Keep</button>` : `<button class="btn danger" data-act="confirm" data-id="${esc(c.id)}">Remove</button>`}</div></section>` : ""}`];
   },
+  previewpick: () => ["Preview as a player", S.team.players.length ? `<div class="list">${S.team.players.map((p) => `<button class="row" data-act="preview-player" data-id="${esc(p.id)}"><span class="num">${esc(p.jersey ?? "–")}</span><span><b>${esc(fullName(p))}</b><span class="meta">${esc([p.pos, p.classYear].filter(Boolean).join(" · "))}</span></span><span></span></button>`).join("")}</div>` : `<p class="muted" style="margin:0">No players on the roster yet.</p>`],
   import: () => ["Import roster", `<label class="f">Roster page on your school's site<input type="text" id="ri-url" inputmode="url" autocomplete="off" placeholder="https://…/sports/baseball/roster" value="${esc(S.team.team.rosterUrl || "")}"></label>
     <label style="display:flex;align-items:center;gap:10px;font-weight:600"><input type="checkbox" id="ri-p" style="width:20px;height:20px"> Include pitchers</label>
     <p class="muted small" style="margin:0">Hitters come in with number, position, class and bats/throws. Importing again updates them and never removes anyone. Two-way players are always included.</p>
@@ -504,7 +656,8 @@ const SHEETS = {
   addcoach: () => ["Add a coach", `<label class="f">Name<input type="text" id="sc-name" placeholder="e.g. Coach Lee" autocomplete="off"></label>
     <p class="muted small" style="margin:0">Coaches see every player on the roster and can manage the team.</p><button class="btn wide" data-act="sc-save">Add coach</button>`],
   editteam() { const t = S.team.team; return ["Team", `<div class="grid"><label class="f full">Name<input type="text" id="tm-name" value="${esc(t.name)}"></label>
-    <label class="f">Short name<input type="text" id="tm-short" value="${esc(t.shortName)}"></label><label class="f">Season<input type="number" id="tm-season" value="${esc(t.season)}"></label></div>
+    <label class="f">Short name<input type="text" id="tm-short" value="${esc(t.shortName)}"></label><label class="f">Season<input type="number" id="tm-season" value="${esc(t.season)}"></label>
+    <label class="f full">NCAA team (from its ncaa.com address)<input type="text" id="tm-ncaa" value="${esc(t.ncaaSeo || "")}" placeholder="e.g. virginia-tech" autocomplete="off"></label></div>
     <button class="btn wide" data-act="tm-save">Save</button>`]; },
   newteam: () => ["New team", `<div class="grid"><label class="f full">School and team name<input type="text" id="nt-name" placeholder="e.g. Ridgeline State Owls"></label>
     <label class="f">Short name<input type="text" id="nt-short" placeholder="Ridgeline St."></label><label class="f">Season<input type="number" id="nt-season" value="${new Date().getFullYear()}"></label>
@@ -565,9 +718,17 @@ document.addEventListener("click", async (e) => {
     if (a === "scode") { const c = S.team.staff.find((x) => x.id === id); const r = await api("access", { method: "POST", query: { team: T }, body: { user: id } }); await refresh();
       return openSheet("code", { title: `${c.name}'s new code`, code: r.code, note: "The old code has stopped working." }); }
     if (a === "sdel") { await api("access", { method: "DELETE", query: { team: T, user: id } }); closeSheet(); await refresh(); return toast("Coach removed"); }
+    if (a === "preview-coach") return startPreview("coach", null, "a coach");
+    if (a === "preview-player") { const p = playerById(id); return startPreview("player", id, p ? fullName(p) : "a player"); }
+    if (a === "exit-preview") return exitPreview();
+    if (a === "rewrite") { loadProfile(id, true); return renderSheet(false); }
+    if (a === "ncaa-sync") { b.disabled = true; let n = 0, g = 0;
+      try { for (let i = 0; i < 40; i++) { b.textContent = n ? `Updating… ${g} games` : "Updating…"; const r = await api("sync", { method: "POST", query: { team: T } }); n++; g += (r.did && r.did.games) || 0;
+          if (r.error === "no_ncaa_team") { toast("Set the NCAA team first"); break; } if (r.done) { toast(g ? `Brought in ${g} games` : "Games are up to date"); break; } }
+        Object.keys(PROF).forEach((k) => delete PROF[k]); await refresh(); } finally { b.disabled = false; } return; }
     if (a === "ri-go") { b.disabled = true; b.textContent = "Importing…"; try { const r = await api("roster", { method: "POST", query: { team: T }, body: { url: val("ri-url"), pitchers: !!(document.getElementById("ri-p") || {}).checked } }); closeSheet(); await refresh();
       return toast(r.added ? `Added ${r.added} player${r.added === 1 ? "" : "s"}${r.updated ? `, updated ${r.updated}` : ""}` : `Updated ${r.updated} players`); } finally { b.disabled = false; b.textContent = "Import"; } }
-    if (a === "tm-save") { await api("team", { method: "PATCH", query: { id: T }, body: { name: val("tm-name"), shortName: val("tm-short"), season: val("tm-season") } }); closeSheet(); await refresh(); return toast("Saved"); }
+    if (a === "tm-save") { await api("team", { method: "PATCH", query: { id: T }, body: { name: val("tm-name"), shortName: val("tm-short"), season: val("tm-season"), ncaaSeo: val("tm-ncaa") } }); closeSheet(); await refresh(); return toast("Saved"); }
     if (a === "nt-save") { const coachName = val("nt-coach"); const r = await api("team", { method: "POST", body: { name: val("nt-name"), shortName: val("nt-short"), season: val("nt-season"), coachName } });
       S.me = await api("me"); showTeams(); return openSheet("code", { title: "Head coach's code", code: r.code, note: `Send this to ${coachName} at ${r.team.name}.` }); }
     if (a === "copy") { try { await navigator.clipboard.writeText(S.sheet.code); toast("Copied"); haptic(); } catch { toast("Select the code to copy it"); } return; }

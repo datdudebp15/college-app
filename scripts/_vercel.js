@@ -23,10 +23,10 @@ async function load(name) {
 }
 
 /** Calls api/<name>.js directly. Returns { status, body }. */
-export async function call(name, { method = "GET", query = {}, body, code } = {}) {
+export async function call(name, { method = "GET", query = {}, body, code, headers = {} } = {}) {
   const fn = await load(name);
   if (!fn) return { status: 404, body: { error: "no_route" } };
-  const req = { method, query, body, headers: code ? { authorization: "Bearer " + code } : {} };
+  const req = { method, query, body, headers: { ...headers, ...(code ? { authorization: "Bearer " + code } : {}) } };
   let status = 200, out = null;
   const res = { setHeader() {}, status(c) { status = c; return res; }, json(o) { out = o; return res; }, send(o) { out = o; return res; } };
   await fn(req, res);

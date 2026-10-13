@@ -4,6 +4,9 @@ import assert from "node:assert/strict";
 import { memoryDatabase, call } from "./_vercel.js";
 import { seedDemo, createAdmin, DEV_CODES, DEMO_TEAM } from "./_seed.js";
 import { parseRosterHtml, fetchRoster } from "../api/_roster.js";
+import { parsePA, parseGame, nameKey } from "../api/_ncaa.js";
+import { metrics, flags } from "../api/_hitting.js";
+import { matchup, likelyStarter } from "../api/_opponent.js";
 
 await memoryDatabase();
 await seedDemo(DEV_CODES);
@@ -114,6 +117,34 @@ await test("the other team's coach sees only his own team", async () => {
   assert.deepEqual(r.body.teams.map((t) => t.id), [OTHER]);
 });
 
+console.log("admin preview");
+await test("admin previewing as a player sees only that player", async () => {
+  const avery = (await call("team", { code: AVERY, query: { id: T } })).body.players[0];
+  const r = await call("team", { code: ADMIN, query: { id: T }, headers: { "x-view-as": "player:" + avery.id } });
+  assert.equal(r.body.me.role, "player");
+  assert.deepEqual(r.body.players.map((p) => p.id), [avery.id]);
+  assert.equal(r.body.staff, null);
+  const other = (await call("team", { code: COACH, query: { id: T } })).body.players.find((p) => p.last === "Varela");
+  assert.equal((await call("player", { code: ADMIN, query: { team: T, id: other.id }, headers: { "x-view-as": "player:" + avery.id } })).status, 404, "not a teammate's page");
+});
+await test("admin previewing as a coach sees the roster but can't change anything", async () => {
+  const r = await call("team", { code: ADMIN, query: { id: T }, headers: { "x-view-as": "coach" } });
+  assert.equal(r.body.me.role, "coach"); assert.equal(r.body.players.length, 12);
+  assert.equal((await call("players", { method: "POST", code: ADMIN, query: { team: T }, headers: { "x-view-as": "coach" }, body: { first: "A", last: "B" } })).status, 403);
+  assert.equal((await call("access", { method: "POST", code: ADMIN, query: { team: T }, headers: { "x-view-as": "coach" }, body: { coach: "X" } })).status, 403);
+});
+await test("the preview header does nothing for coaches and players", async () => {
+  const r = await call("team", { code: AVERY, query: { id: T }, headers: { "x-view-as": "coach" } });
+  assert.equal(r.body.me.role, "player"); assert.equal(r.body.players.length, 1);
+  const c = await call("players", { method: "POST", code: COACH, query: { team: T }, headers: { "x-view-as": "coach" }, body: { first: "Still", last: "Works" } });
+  assert.equal(c.status, 200);
+  await call("players", { method: "DELETE", code: COACH, query: { team: T, id: c.body.player.id } });
+});
+await test("previewing a player from another team fails", async () => {
+  const avery = (await call("team", { code: AVERY, query: { id: T } })).body.players[0];
+  assert.equal((await call("team", { code: ADMIN, query: { id: OTHER }, headers: { "x-view-as": "player:" + avery.id } })).status, 404);
+});
+
 console.log("roster import");
 // A fictional roster page in the WMT Digital format (Nuxt "devalue" data: one flat array, objects point at entries by index).
 function nuxtPage(root) {
@@ -152,5 +183,62 @@ await test("only public https roster pages are fetched", async () => {
 });
 await test("players cannot import a roster", async () =>
   assert.equal((await call("roster", { method: "POST", code: AVERY, query: { team: T }, body: { url: "https://example.com/roster" } })).status, 403));
+
+console.log("play-by-play");
+// Made-up lines in ncaa.com's format.
+await test("reads results, pitch sequences, batted balls and direction", async () => {
+  const a = parsePA("Testman,Jay struck out looking (1-2 BKFFK).");
+  assert.deepEqual([a.last, a.first, a.outcome, a.seq, a.pitches, a.swings, a.whiffs, a.called, a.inPlay, a.ab], ["Testman", "Jay", "KL", "BKFFK", 5, 2, 0, 2, false, true]);
+  const b = parsePA("Testman,Jay flied out to lf (2-1 KBB).");
+  assert.deepEqual([b.outcome, b.pitches, b.swings, b.bb, b.field, b.balls, b.strikes], ["FO", 4, 1, "FB", "L", 2, 1]);
+  const c = parsePA("Sample,Ray grounded out, 2b to 1b (0-1 K); Other,Guy advanced to third base.");
+  assert.deepEqual([c.outcome, c.bb, c.field], ["GO", "GB", "R"]);
+  assert.equal(parsePA("Sample,Ray walked (3-1 BKBBB).").ab, false);
+  assert.equal(parsePA("Sample,Ray singled up the middle (0-0).").field, "C");
+  assert.equal(parsePA("Sample,Ray struck out swinging (2-2 BSSNS).").seq, "BSSS", "clock violations aren't pitches");
+  assert.equal(parsePA("Mound visit (VT)"), null);
+  assert.equal(parsePA("Previous PA: HBP result after 1-2 count (KBF)"), null);
+  assert.equal(parsePA("Sample,Ray stole second base."), null);
+});
+await test("tracks who pitched to whom, starters first", async () => {
+  const pbp = { teams: [{ teamId: "1", seoname: "home-u", nameShort: "Home" }, { teamId: "2", seoname: "away-u", nameShort: "Away" }],
+    periods: [{ periodNumber: 1, playbyplayStats: [
+      { teamId: 2, plays: [{ playText: "Lead,Off flied out to cf (0-0)." }] },
+      { teamId: 1, plays: [{ playText: "First,Bat struck out swinging (0-2 SSS)." }] },
+      { teamId: 1, plays: [{ playText: "AWAY pitching change: Reliever,Rob replaces Starter,Sam." }] },
+      { teamId: 1, plays: [{ playText: "Second,Bat walked (3-0 BBBB)." }] } ] }] };
+  const g = parseGame(null, pbp);
+  assert.deepEqual(g.pas.map((p) => [p.batSeo, p.pitchSeo, p.pitcher]), [["away-u", "home-u", null], ["home-u", "away-u", "Starter,Sam"], ["home-u", "away-u", "Reliever,Rob"]]);
+  const s = g.pitchers.find((p) => p.name === "Starter,Sam");
+  assert.deepEqual([s.started, s.bf, s.k, s.outs], [true, 1, 1, 1]);
+});
+await test("names match across sources", async () => assert.equal(nameKey("TarpleyJr", "Derrick"), nameKey("Tarpley", "Derrick")));
+
+console.log("hitting numbers");
+const P = (o) => ({ outcome: "GO", seq: "", balls: 0, strikes: 0, pitches: 1, swings: 1, whiffs: 0, fouls: 0, called: 0, in_play: true, hit: false, ab: true, bb: "GB", field: "L", ...o });
+await test("slash line, rates and first-pitch numbers", async () => {
+  const pas = [P({ outcome: "1B", hit: true, bb: "LD" }), P({ outcome: "HR", hit: true, bb: "FB", seq: "B", pitches: 2 }), P({ outcome: "BB", ab: false, in_play: false, seq: "BBBB", pitches: 4, swings: 0, bb: null, field: null }),
+    P({ outcome: "KS", in_play: false, seq: "KSS", pitches: 3, swings: 2, whiffs: 2, called: 1, strikes: 2, bb: null, field: null })];
+  const m = metrics(pas, "R");
+  assert.deepEqual([m.pa, m.ab, m.h, m.avg, m.obp, m.slg], [4, 3, 2, 0.667, 0.75, 1.667]);
+  assert.equal(m.kPct, 25); assert.equal(m.fpSwingPct, 25, "only the single was swung at on the first pitch"); assert.equal(m.whiffPct, 50);
+  assert.equal(m.twoStrike.pa, 1);
+});
+await test("flags compare him to his team, and need enough plate appearances", async () => {
+  const team = metrics(Array.from({ length: 200 }, (_, i) => P(i % 5 === 0 ? { outcome: "KS", in_play: false, seq: "SSS", pitches: 3, swings: 3, whiffs: 3, bb: null, field: null } : {})), null);
+  const lots = Array.from({ length: 60 }, (_, i) => P(i % 2 === 0 ? { outcome: "KS", in_play: false, seq: "SSS", pitches: 3, swings: 3, whiffs: 3, bb: null, field: null } : {}));
+  assert.ok(flags(metrics(lots, "R"), team).some((f) => f.key === "k" && f.sev === "bad"));
+  assert.deepEqual(flags(metrics(lots.slice(0, 20), "R"), team), []);
+});
+await test("matchup notes come from both sides' numbers", async () => {
+  const notes = matchup({ fpStrikePct: 70, whiffPct: 30, kLookingShare: 10, gbPct: 40, bip: 30, bbPct: 5, pitchesPerBF: 3.8 }, { fpSwingPct: 10, whiffPct: 25, klShare: 0, k: 3, batted: { gbPct: 30 } });
+  assert.equal(notes.length, 2);
+  assert.match(notes[0], /first-pitch strike 70%/);
+});
+await test("likely starter: whoever started their last game on that weekday", async () => {
+  const staff = [{ name: "Fri Guy", starts: 3, last: "2026-04-10", recent: [{ date: "2026-04-10", started: true }] },
+    { name: "Sat Guy", starts: 3, last: "2026-04-11", recent: [{ date: "2026-04-11", started: true }] }];
+  assert.equal(likelyStarter(staff, "2026-04-18").name, "Sat Guy");
+});
 
 console.log(process.exitCode ? "\nSome tests failed." : `\nAll ${passed} tests passed.`);

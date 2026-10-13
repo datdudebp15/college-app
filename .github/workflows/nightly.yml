@@ -1,0 +1,30 @@
+name: Nightly games and notes
+
+# Every night at 4 AM Eastern (08:00 UTC; 3 AM on standard time), after the night's games are final:
+# pulls NCAA box scores and play-by-play for every team, then writes the players' notes that are due
+# (postgame for the last two days, next opponent for the next six, season when it changed), so they're
+# ready by morning. /api/sync works for ~50 seconds per call and says when it's done; this loops until then.
+# Needs: repository secret APP_URL (the Vercel address) and CRON_SECRET (the same value set in Vercel).
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Games and notes
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then echo "APP_URL or CRON_SECRET not set yet; skipping."; exit 0; fi
+          for i in $(seq 1 40); do
+            out=$(curl -sS --max-time 90 -H "x-cron-key: $CRON_SECRET" "$APP_URL/api/sync" || true)
+            echo "$out"
+            echo "$out" | grep -q '"done":true' && exit 0
+            echo "$out" | grep -q '"error"' && exit 1
+          done
+          echo "Still not done after 40 rounds"; exit 1

@@ -23,7 +23,8 @@ http.createServer(async (req, res) => {
     let raw = ""; for await (const c of req) raw += c;
     let body; try { body = raw ? JSON.parse(raw) : undefined; } catch { body = raw; }
     const code = (req.headers.authorization || "").replace(/^Bearer /, "") || undefined;
-    const r = await call(api[1], { method: req.method, query: Object.fromEntries(url.searchParams), body, code });
+    const viewAs = req.headers["x-view-as"];
+    const r = await call(api[1], { method: req.method, query: Object.fromEntries(url.searchParams), body, code, headers: viewAs ? { "x-view-as": viewAs } : {} });
     res.writeHead(r.status, { "Content-Type": "application/json", "Cache-Control": "no-store" });
     return res.end(JSON.stringify(r.body));
   }

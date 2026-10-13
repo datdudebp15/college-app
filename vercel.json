@@ -23,6 +23,12 @@
   "functions": {
     "api/roster.js": {
       "maxDuration": 60
+    },
+    "api/sync.js": {
+      "maxDuration": 60
+    },
+    "api/player.js": {
+      "maxDuration": 60
     }
   }
 }

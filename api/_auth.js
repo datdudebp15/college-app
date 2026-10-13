@@ -24,13 +24,26 @@ export async function signedIn(req) {
   if (code.length < 10) return null;
   await ensureSchema();
   const u = await one(`SELECT id, name, is_admin FROM users WHERE code_hash = $1`, [hashCode(code)]);
-  if (u) await query(`UPDATE users SET last_seen = now() WHERE id = $1`, [u.id]).catch(() => {});
+  if (!u) return null;
+  // Admin preview: "X-View-As: coach" or "X-View-As: player:<id>" shows the app exactly as that person's
+  // permissions allow, read-only. Ignored for everyone who isn't an admin.
+  const va = String(req.headers["x-view-as"] || "");
+  if (u.is_admin && va) {
+    const m = va.match(/^(coach|player):?([A-Za-z0-9_]{0,64})$/);
+    if (m && (m[1] === "coach" || m[2])) u.viewAs = { role: m[1], playerId: m[1] === "player" ? m[2] : null };
+  }
+  if (!u.viewAs) await query(`UPDATE users SET last_seen = now() WHERE id = $1`, [u.id]).catch(() => {});
   return u;
 }
 
 /** What this user may do on this team: { role: "coach" | "player", playerId } or null. Admins act as coaches. */
 export async function access(user, teamId) {
   if (!user || !teamId) return null;
+  if (user.viewAs) {
+    if (user.viewAs.role === "coach") return (await one(`SELECT 1 FROM teams WHERE id = $1`, [teamId])) ? { role: "coach", playerId: null, preview: true } : null;
+    const p = await one(`SELECT id FROM players WHERE id = $1 AND team_id = $2 AND active`, [user.viewAs.playerId, teamId]);
+    return p ? { role: "player", playerId: p.id, preview: true } : null;
+  }
   const m = await one(`SELECT role, player_id FROM members WHERE team_id = $1 AND user_id = $2`, [teamId, user.id]);
   if (m) return { role: m.role, playerId: m.player_id };
   if (user.is_admin && (await one(`SELECT 1 FROM teams WHERE id = $1`, [teamId]))) return { role: "coach", playerId: null, admin: true };
@@ -50,6 +63,7 @@ export function handler(fn) {
     try {
       const user = await signedIn(req);
       if (!user) return res.status(401).json({ error: "sign_in" });
+      if (user.viewAs && req.method !== "GET") return res.status(403).json({ error: "preview_only" });
       let body = req.body;
       if (typeof body === "string") { try { body = JSON.parse(body); } catch { body = null; } }
       return await fn(req, res, user, body && typeof body === "object" ? body : {});

@@ -6,7 +6,7 @@ import net from "node:net";
 // Supported today: sites built on WMT Digital (e.g. hokiesports.com), which embed the roster as Nuxt page data.
 // Only the fields the app uses are kept: name, number, position, class, bats/throws.
 
-/** Fetches a roster page and returns { season, players: [{ sourceId, first, last, jersey, pos, posLabel, classYear, bats, throws, pitcher }] }. */
+/** Fetches a roster page and returns { season, players: [{ sourceId, first, last, jersey, pos, posLabel, classYear, bats, throws, pitcher, prevSchool }] }. */
 export async function fetchRoster(rawUrl) {
   const url = await safeUrl(rawUrl);
   const r = await fetch(url, { redirect: "error", signal: AbortSignal.timeout(20000), headers: { "User-Agent": "OffseasonCollege/1.0 (roster import for the team's own coaching staff)" } });
@@ -53,6 +53,7 @@ export function parseRosterHtml(html) {
       bats: ["R", "L", "S", "B"].includes(bats) ? (bats === "B" ? "S" : bats) : null,
       throws: ["R", "L"].includes(throws) ? throws : null,
       pitcher: /^(P|RHP|LHP)$/i.test(posLabel),
+      prevSchool: (e.player.previous_school || "").trim().slice(0, 80) || null,
     };
   }).filter((p) => p.first && p.last);
   return { season: season && /^\d{4}$/.test(season) ? Number(season) : null, players };

@@ -54,6 +54,38 @@ const SCHEMA = [
   `ALTER TABLE players ADD COLUMN IF NOT EXISTS source_id text`,
   `CREATE UNIQUE INDEX IF NOT EXISTS players_source ON players (team_id, source, source_id) WHERE source_id IS NOT NULL`,
   `ALTER TABLE teams ADD COLUMN IF NOT EXISTS roster_url text`,
+  `ALTER TABLE teams ADD COLUMN IF NOT EXISTS ncaa_seo text`,
+  `ALTER TABLE players ADD COLUMN IF NOT EXISTS prev_school text`,
+
+  // NCAA data, shared by every team: each date's scoreboard and each game is fetched once.
+  `CREATE TABLE IF NOT EXISTS ncaa_dates (date text PRIMARY KEY, fetched_at timestamptz NOT NULL DEFAULT now(), games int NOT NULL DEFAULT 0)`,
+  `CREATE TABLE IF NOT EXISTS ncaa_games (
+    id text PRIMARY KEY, date text NOT NULL, season int NOT NULL, epoch bigint, state text, time text,
+    home_seo text NOT NULL, home_name text, home_score int, away_seo text NOT NULL, away_name text, away_score int
+  )`,
+  `CREATE INDEX IF NOT EXISTS ncaa_games_home ON ncaa_games (home_seo, date)`,
+  `CREATE INDEX IF NOT EXISTS ncaa_games_away ON ncaa_games (away_seo, date)`,
+  `CREATE TABLE IF NOT EXISTS ncaa_game_data (game_id text PRIMARY KEY, box jsonb, pbp jsonb, parser_v int NOT NULL DEFAULT 0, fetched_at timestamptz NOT NULL DEFAULT now())`,
+  // one row per plate appearance, parsed from the play-by-play
+  `CREATE TABLE IF NOT EXISTS ncaa_pas (
+    game_id text NOT NULL, idx int NOT NULL, inning int, bat_seo text, pitch_seo text, batter_key text, batter text, pitcher text,
+    outcome text, seq text, balls int, strikes int, pitches int, swings int, whiffs int, fouls int, called int,
+    in_play boolean, hit boolean, ab boolean, bb text, field text, text text,
+    PRIMARY KEY (game_id, idx)
+  )`,
+  `CREATE INDEX IF NOT EXISTS ncaa_pas_batter ON ncaa_pas (bat_seo, batter_key)`,
+  `CREATE INDEX IF NOT EXISTS ncaa_pas_pitcher ON ncaa_pas (pitch_seo, pitcher)`,
+  `CREATE TABLE IF NOT EXISTS ncaa_pitch_lines (
+    game_id text NOT NULL, seo text NOT NULL, name text NOT NULL, started boolean, bf int, outs int, h int, bb int, k int, hbp int, hr int, pitches int,
+    PRIMARY KEY (game_id, seo, name)
+  )`,
+  // Claude's write-ups: kind = season | postgame | opponent; key = season year, game id, or opponent+date
+  `CREATE TABLE IF NOT EXISTS notes (
+    player_id text NOT NULL REFERENCES players(id) ON DELETE CASCADE, kind text NOT NULL, key text NOT NULL,
+    data jsonb NOT NULL, source_hash text, model text, created_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (player_id, kind, key)
+  )`,
+  `CREATE TABLE IF NOT EXISTS kv (k text PRIMARY KEY, v jsonb NOT NULL, updated_at timestamptz NOT NULL DEFAULT now())`,
   // role: coach (sees and manages the whole team) or player (sees only player_id).
   `CREATE TABLE IF NOT EXISTS members (
     team_id text NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
