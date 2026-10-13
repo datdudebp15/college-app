@@ -218,6 +218,22 @@ details.more summary::-webkit-details-marker{display:none}
 .tend{margin:0;padding-left:18px;color:var(--ink-2);font-size:14.5px;display:flex;flex-direction:column;gap:4px}
 .meta.lines{display:flex;flex-direction:column} .meta.lines span{white-space:nowrap} .meta.lines b{color:var(--ink-2);font-weight:700}
 .murow:active{transform:scale(.99)}
+/* pitch pictures */
+.pics{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:560px){.pics{grid-template-columns:1fr 1fr}}
+figure.heat,figure.spray{margin:0;background:var(--card-2);border-radius:18px;padding:10px;color:var(--ink-2)}
+figure svg{width:100%;height:auto;display:block}
+figure figcaption{font-size:12px;color:var(--muted);font-weight:600;text-align:center;margin-top:4px;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 8px;align-items:center}
+.hv{font:700 13px var(--font);fill:var(--ink)}
+.spray .field{fill:color-mix(in srgb,var(--good) 10%,transparent);stroke:var(--line);stroke-width:1.5}
+.spray .infield{fill:color-mix(in srgb,var(--warn) 14%,transparent);stroke:var(--line)}
+.spray circle.out{fill:var(--muted);opacity:.45} .spray circle.hit{fill:var(--accent)} .spray circle.hr{fill:var(--ember);stroke:#fff;stroke-width:1}
+.lg{display:inline-block;width:9px;height:9px;border-radius:50%} .lg.out{background:var(--muted);opacity:.5} .lg.hit{background:var(--accent)} .lg.hr{background:var(--ember)}
+.plist{max-height:none}
+.prow{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:10px 14px}
+.prow+.prow{border-top:1px solid var(--line)}
+.prow .pt{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font:800 12px var(--mono);background:var(--accent-soft);color:var(--accent)}
+.prow b{display:block;font-size:14.5px} .prow .meta{font-size:12px;color:var(--muted)} .pres{text-align:right;display:flex;flex-direction:column;align-items:flex-end}
 /* player profile */
 .card h4{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:6px 0 -4px}
 .stats small{display:block;font-size:11.5px;color:var(--muted);font-weight:600;margin-top:2px}
@@ -263,6 +279,19 @@ tbody tr:last-child td{border-bottom:0}
 .skel{height:18px;border-radius:8px;background:linear-gradient(90deg,var(--fill-2),var(--fill),var(--fill-2));background-size:200% 100%;animation:shimmer 1.2s linear infinite}
 .skel.short{width:60%}
 @keyframes shimmer{to{background-position:-200% 0}}
+@media print {
+  :root{--bg:#fff;--card:#fff;--card-2:#f4f5f8;--ink:#000;--ink-2:#222;--muted:#555;--line:rgba(0,0,0,.15);color-scheme:light}
+  body{background:#fff!important;font-size:12px}
+  #field,#top,#tabs,#toast,#scrim,.noprint,.seg,.btn,.link,.gbtn,.note.preview,#sheet .grab,#sheet .sh .gbtn{display:none!important}
+  main{padding:0!important;max-width:none}
+  .card,.list{box-shadow:none!important;border:1px solid #ddd;break-inside:avoid;page-break-inside:avoid}
+  .enter>*,.swap{animation:none!important}
+  body.sheet-open #stage{display:none!important}
+  body.sheet-open #sheet{position:static!important;transform:none!important;max-height:none!important;max-width:none;opacity:1!important;box-shadow:none!important;background:#fff!important;-webkit-backdrop-filter:none;backdrop-filter:none}
+  #sheet .sb{overflow:visible!important}
+  .pics{grid-template-columns:1fr 1fr!important}
+  .glass::before{display:none}
+}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}#field i{animation:none}}
 </style>
 </head>
@@ -295,6 +324,7 @@ const I = {
   staff: '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 4.5V3.5h6v1M9 10h6M9 14h6M9 18h3"/></svg>',
   team: '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.3-3 7.7-7 9.5-4-1.8-7-5.2-7-9.5V6z"/><path d="M9 12l2 2 4-4"/></svg>',
   plug: '<svg viewBox="0 0 24 24"><path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/></svg>',
+  search: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 9.3h16M4 14.7h16M9.3 4v16M14.7 4v16"/></svg>',
   today: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>',
   scout: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5M11 7.5v7M7.5 11h7"/></svg>',
   me: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.8 3.6-6 7-6s6.2 2.2 7 6"/></svg>',
@@ -405,18 +435,18 @@ function showTeams() {
     ${S.me.user.admin ? `<button class="btn soft" data-act="sheet" data-s="newteam">New team</button>` : ""}`, "enter");
 }
 function tabList() {
-  return coach() ? [["today", "Today", I.today], ["roster", "Roster", I.roster], ["scout", "Scouting", I.scout], ["staff", "Staff", I.staff], ["team", "Team", I.team]] : [["me", "Me", I.me], ["account", "Account", I.account]];
+  return coach() ? [["today", "Today", I.today], ["roster", "Roster", I.roster], ["search", "Search", I.search], ["scout", "Scouting", I.scout], ["team", "Team", I.team]] : [["me", "Me", I.me], ["search", "Pitches", I.search], ["account", "Account", I.account]];
 }
 function renderPage(anim) {
   const team = S.team.team, short = team.shortName || team.name;
   const left = S.viewAs ? `<button class="gbtn glass" data-act="exit-preview">${I.x}Exit preview</button>` : manyTeams() ? `<button class="gbtn glass icon" data-act="teams" aria-label="All teams">${I.back}</button>` : "";
   const right = coach() && S.tab === "roster" ? `<button class="gbtn glass icon" data-act="sheet" data-s="add" aria-label="Add a player">${I.plus}</button>`
     : coach() && S.tab === "staff" ? `<button class="gbtn glass icon" data-act="sheet" data-s="addcoach" aria-label="Add a coach">${I.plus}</button>` : "";
-  const titles = { today: "Today", scout: "Scouting", roster: "Roster", staff: "Staff", team: "Team", me: S.team.players[0] ? S.team.players[0].first : "Me", account: "Account" };
+  const titles = { today: "Today", scout: "Scouting", search: coach() ? "Search" : "Pitches", roster: "Roster", staff: "Staff", team: "Team", me: S.team.players[0] ? S.team.players[0].first : "Me", account: "Account" };
   topBar(left, `${titles[S.tab]} · ${short}`, `<span class="rgrp">${right}${profileBtn()}</span>`);
   const demo = (S.viewAs ? `<div class="note preview"><span>Previewing as <b>${esc(S.viewAs.name)}</b>. This is exactly what ${S.viewAs.role === "coach" ? "a coach" : "he"} sees. Read-only.</span><button class="btn sm" data-act="exit-preview">Exit</button></div>` : "")
     + (team.demo ? `<div class="note">Demo team. ${(S.team.players || []).some((p) => p.realPerson) ? `Players are fictional except ${esc(S.team.players.filter((p) => p.realPerson).map(fullName).join(", "))}, whose real stats are here for a trial.` : "Every player and coach here is fictional."}</div>` : "");
-  const body = { today: todayPage, scout: scoutPage, roster: rosterPage, staff: staffPage, team: teamPage, me: mePage, account: accountPage }[S.tab]();
+  const body = { today: todayPage, scout: scoutPage, search: searchPage, roster: rosterPage, staff: staffPage, team: teamPage, me: mePage, account: accountPage }[S.tab]();
   setPage(demo ? body.replace(/^(<div class="lt">[\s\S]*?<\/div>)/, `$1${demo}`) : body, anim);
 }
 function setPage(html, anim) {
@@ -435,6 +465,10 @@ function rosterPage() {
       <span><b>${esc(fullName(p))}</b><span class="meta">${esc([p.pos, p.classYear, p.bats && p.throws ? `B/T ${p.bats}/${p.throws}` : ""].filter(Boolean).join(" · "))}</span></span>${accessChip(p.access)}</button>`).join("")}</div>`
       : `<div class="list"><p class="empty">No players yet.</p></div><button class="btn" data-act="sheet" data-s="import">Import from your school's site</button><button class="btn soft" data-act="sheet" data-s="add">Add a player by hand</button>`);
 }
+function staffList() {
+  return `<div class="list inset">${S.team.staff.map((s) => `<button class="row" data-act="sheet" data-s="coach" data-id="${esc(s.id)}"><span class="num">${esc(initials(s.name))}</span>
+    <span><b>${esc(s.name)}${s.you ? ' <span class="muted" style="font-weight:600">· you</span>' : ""}</b><span class="meta">${s.access === "active" ? "Signed in" : "Code sent"}</span></span><span class="chip">Coach</span></button>`).join("")}</div>`;
+}
 function staffPage() {
   const st = S.team.staff;
   return lt("Staff", "Coaches see every player and can manage the team.") +
@@ -448,6 +482,7 @@ function teamPage() {
       <div><b>${S.team.staff.length}</b><span>Coaches</span></div><div><b>${S.team.players.filter((p) => p.access === "active").length}</b><span>Players signed in</span></div></div></section>
     <section class="card"><div class="hd"><h3>Roster from your school's site</h3></div><p class="muted" style="margin:0">${t.rosterUrl ? `Last imported from ${esc(new URL(t.rosterUrl).hostname)}. Import again to pick up new numbers, positions and classes.` : "Bring in your hitters with their numbers, positions, classes and bats/throws."}</p>
       <button class="btn soft" data-act="sheet" data-s="import">${t.rosterUrl ? "Import again" : "Import roster"}</button></section>
+    <section class="card"><div class="hd"><h3>Staff</h3><button class="link" data-act="sheet" data-s="addcoach">Add a coach</button></div>${staffList()}</section>
     ${!S.viewAs ? integrationsCard() : ""}
     <section class="card"><div class="hd"><h3>NCAA games</h3><button class="link" data-act="sheet" data-s="editteam">Change</button></div>
       <p class="muted" style="margin:0">${t.ncaaSeo ? `Linked to <b style="color:var(--ink)">${esc(t.ncaaSeo)}</b> on ncaa.com. Box scores and play-by-play update every night; this brings them in now.` : "Not linked yet. Updating finds your team on ncaa.com by its name."}</p>
@@ -535,6 +570,92 @@ function mePage() {
   if (!p) return lt("Me", "") + `<div class="card"><p class="muted" style="margin:0">Your coach hasn't linked your player page yet.</p></div>`;
   return lt(p.first, esc(S.team.team.name)) + `<section class="card"><h3>${esc(fullName(p))}</h3>${facts(p)}</section>` + profileSections(p.id, true);
 }
+
+/* ---------- pitch pictures ---------- */
+const HM = { swingPct: ["Swing rate", "%", 0, 100], whiffPct: ["Misses per swing", "%", 0, 60], ev: ["Exit velo", " mph", 70, 100], hardPct: ["Hard-hit (95+)", "%", 0, 70] };
+function heatColor(v, lo, hi) {
+  if (v == null) return "var(--fill-2)";
+  const f = Math.max(0, Math.min(1, (v - lo) / (hi - lo)));
+  // cool slate -> warm ember, readable in both themes
+  const a = [96, 125, 190], b = [255, 107, 61], mix = a.map((x, i) => Math.round(x + (b[i] - x) * f));
+  return `rgba(${mix.join(",")},${0.25 + f * 0.6})`;
+}
+function heatMap(grid, metric) {
+  const [label, unit, lo, hi] = HM[metric], W = 50, H = 56;
+  const cells = grid.map((row, r) => row.map((c, k) => {
+    const v = c.n >= 5 ? c[metric] : null, x = 10 + k * W, y = 10 + r * H;
+    return `<rect x="${x}" y="${y}" width="${W - 2}" height="${H - 2}" rx="7" fill="${heatColor(v, lo, hi)}"/><text x="${x + W / 2 - 1}" y="${y + H / 2 + 4}" text-anchor="middle" class="hv">${v == null ? "" : Math.round(v)}</text>`;
+  }).join("")).join("");
+  return `<figure class="heat"><svg viewBox="0 0 270 300" role="img" aria-label="${esc(label)} by location">${cells}
+    <rect x="${10 + W}" y="${10 + H}" width="${W * 3 - 2}" height="${H * 3 - 2}" fill="none" stroke="currentColor" stroke-width="2.5" rx="4" opacity=".75"/>
+    <path d="M110 ${10 + H * 5 + 8} h50 l-6 7 h-38 z" fill="currentColor" opacity=".35"/></svg>
+    <figcaption>${esc(label)}${unit === "%" ? " (%)" : ""} · catcher's view · cells with 5+ pitches</figcaption></figure>`;
+}
+function sprayChart(points) {
+  const S = 0.52, cx = 150, cy = 236, pt = (b, d) => [cx + d * S * Math.sin((b * Math.PI) / 180), cy - d * S * Math.cos((b * Math.PI) / 180)];
+  const fence = Array.from({ length: 19 }, (_, i) => { const b = -45 + i * 5; return pt(b, 330 + 70 * (1 - Math.abs(b) / 45)); });
+  const dots = points.map((p) => { const [x, y] = pt(p.b, Math.min(p.d, 450)); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${p.hr ? 4.2 : 3.2}" class="${p.hr ? "hr" : p.hit ? "hit" : "out"}"/>`; }).join("");
+  const [lx, ly] = pt(-45, 340), [rx, ry] = pt(45, 340);
+  return `<figure class="spray"><svg viewBox="0 0 300 250" role="img" aria-label="Spray chart">
+    <path d="M${cx} ${cy} L${lx} ${ly} ${fence.map(([x, y]) => "L" + x.toFixed(1) + " " + y.toFixed(1)).join(" ")} L${cx} ${cy}Z" class="field"/>
+    <path d="M${cx} ${cy} l${(90 * S * 0.707).toFixed(1)} ${(-90 * S * 0.707).toFixed(1)} l${(-90 * S * 0.707).toFixed(1)} ${(-90 * S * 0.707).toFixed(1)} l${(-90 * S * 0.707).toFixed(1)} ${(90 * S * 0.707).toFixed(1)}z" class="infield"/>${dots}</svg>
+    <figcaption><span class="lg hit"></span>hit <span class="lg hr"></span>home run <span class="lg out"></span>out · ${points.length} balls in play</figcaption></figure>`;
+}
+function pitchSummary(s) {
+  const tile = (l, v) => `<div><b>${esc(v)}</b><span>${esc(l)}</span></div>`;
+  return `<div class="stats">${tile("Chase", pc(s.chasePct))}${tile("Swings at strikes", pc(s.zoneSwingPct))}${tile("Misses per swing", pc(s.whiffPct))}${tile("Hard-hit (95+)", pc(s.hardHitPct))}
+    ${tile("Avg exit velo", s.ev == null ? "–" : s.ev + "")}${tile("Avg launch", s.la == null ? "–" : s.la + "°")}${tile("Max exit velo", s.maxEv == null ? "–" : s.maxEv + "")}${tile("Pitches", s.pitches)}</div>`;
+}
+
+/* ---------- pitch data card on a player page ---------- */
+const PD = {};
+function loadPD(id, q) {
+  const k = S.team.team.id + "|" + id + "|" + JSON.stringify(q);
+  if (!PD[k]) { PD[k] = { loading: true }; api("pitches", { query: { team: S.team.team.id, ...(id !== "team" ? { player: id } : {}), ...q } }).then((d) => { PD[k] = { data: d }; }).catch((e) => { PD[k] = { error: e.code }; })
+    .finally(() => { if (S.sheet && S.sheet.kind === "player" && S.sheet.id === id) renderSheet(false); else if (S.view === "team" && (S.tab === "me" || S.tab === "search")) renderPage(); }); }
+  return PD[k];
+}
+function pitchCard(id, season) {
+  const st = S.pd || (S.pd = { metric: "swingPct", type: "" });
+  const q = { season: String(season), ...(st.type ? { type: st.type } : {}) };
+  const r = loadPD(id, q), d = r.data;
+  if (!d) return `<section class="card"><h3>Pitch by pitch</h3><div class="skel"></div></section>`;
+  if (!d.summary.pitches && !st.type) return "";
+  const seg = (name, cur, opts) => `<div class="seg">${opts.map(([v, l]) => `<button data-act="pd" data-k="${name}" data-v="${v}" aria-pressed="${cur === v}">${l}</button>`).join("")}</div>`;
+  return `<section class="card"><div class="hd"><h3>Pitch by pitch</h3><span class="muted small">${esc(season)} · ${d.summary.pitches} pitches</span></div>
+    ${seg("type", st.type, [["", "All"], ["fast", "Fastballs"], ["breaking", "Breaking"], ["offspeed", "Off-speed"]])}
+    ${pitchSummary(d.summary)}
+    ${seg("metric", st.metric, [["swingPct", "Swing"], ["whiffPct", "Miss"], ["ev", "Exit velo"], ["hardPct", "Hard-hit"]])}
+    <div class="pics">${heatMap(d.grid, st.metric)}${d.spray.length ? sprayChart(d.spray) : ""}</div>
+    <button class="btn soft" data-act="pd-search" data-id="${esc(id)}" data-season="${esc(season)}">See every pitch</button></section>`;
+}
+
+/* ---------- Search (coaches: the team or any hitter; players: themselves) ---------- */
+function searchPage() {
+  const f = S.sf || (S.sf = { player: coach() ? "" : (S.team.players[0] || {}).id || "", season: "", type: "", count: "", result: "", hand: "", metric: "swingPct" });
+  const q = Object.fromEntries(Object.entries({ player: f.player, season: f.season, type: f.type, count: f.count, result: f.result, hand: f.hand }).filter(([, v]) => v));
+  const r = loadPD(f.player || "team", q), d = r.data;
+  const sel = (id, cur, opts) => `<select data-sf="${id}">${opts.map(([v, l]) => `<option value="${esc(v)}"${String(cur) === String(v) ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
+  const seasons = [...new Set([S.team.team.season, S.team.team.season - 1, S.team.team.season - 2])];
+  const filters = `<section class="card"><div class="grid">
+      ${coach() ? `<label class="f full">Hitter${sel("player", f.player, [["", "Whole team"], ...S.team.players.map((p) => [p.id, fullName(p)])])}</label>` : ""}
+      <label class="f">Season${sel("season", f.season, [["", "All seasons"], ...seasons.map((y) => [y, y])])}</label>
+      <label class="f">Pitch${sel("type", f.type, [["", "All pitches"], ["fast", "Fastballs"], ["breaking", "Breaking balls"], ["offspeed", "Off-speed"], ...((d && d.types) || []).map((x) => [x.pitch_type, x.pitch_type])])}</label>
+      <label class="f">Count${sel("count", f.count, [["", "Any count"], ["ahead", "Hitter ahead"], ["even", "Even"], ["behind", "Hitter behind"], ["two", "Two strikes"], ...["0-0", "1-0", "0-1", "1-1", "2-0", "2-1", "1-2", "2-2", "3-1", "3-2", "0-2"].map((c) => [c, c])])}</label>
+      <label class="f">Result${sel("result", f.result, [["", "Any"], ["swing", "Swings"], ["take", "Takes"], ["whiff", "Misses"], ["chase", "Chases"], ["inplay", "Balls in play"], ["hit", "Hits"], ["k", "Strikeouts"]])}</label>
+      <label class="f">Pitcher${sel("hand", f.hand, [["", "Either hand"], ["R", "Righties"], ["L", "Lefties"]])}</label></div></section>`;
+  if (!d) return lt(coach() ? "Search" : "Your pitches", "") + filters + (r.error ? `<div class="card"><p class="muted" style="margin:0">Couldn't search right now.</p></div>` : `<section class="card"><div class="skel"></div><div class="skel short"></div></section>`);
+  if (!d.summary.pitches) return lt(coach() ? "Search" : "Your pitches", "") + filters + `<div class="card"><p class="muted" style="margin:0">No pitches match. Pitch data comes from TrackMan (connect it on the Team tab).</p></div>`;
+  const seg = `<div class="seg">${[["swingPct", "Swing"], ["whiffPct", "Miss"], ["ev", "Exit velo"], ["hardPct", "Hard-hit"]].map(([v, l]) => `<button data-act="sf-metric" data-v="${v}" aria-pressed="${f.metric === v}">${l}</button>`).join("")}</div>`;
+  const CALL = { ball: "Ball", called_strike: "Called strike", swinging_strike: "Swing and miss", foul: "Foul", in_play: "In play", hbp: "Hit by pitch" };
+  const list = `<div class="list inset plist">${d.rows.map((p) => `<div class="prow"><span class="pt">${esc((p.pitch_type || "?").slice(0, 2).toUpperCase())}</span>
+      <span><b>${esc(p.pitch_type || "Pitch")} ${p.velo ? esc(p.velo.toFixed(1)) : ""}</b><span class="meta">${esc(gameDay(p.date))} ${p.home ? "vs" : "at"} ${esc(p.opponent || "")} · ${esc(ordinal(p.inning))} · ${p.balls}-${p.strikes}${coach() && !f.player ? " · " + esc(p.batter_name || "") : ""} · ${esc(p.pitcher_name || "")} (${esc(p.pitcher_throws || "?")})</span></span>
+      <span class="pres"><b>${esc(p.result && p.call === "in_play" ? OUTC[p.result] || p.result : CALL[p.call] || p.call)}</b>${p.ev ? `<span class="meta">${p.ev.toFixed(0)} mph · ${Math.round(p.la)}°${p.distance ? " · " + Math.round(p.distance) + " ft" : ""}</span>` : ""}${p.video_url ? `<a class="link" href="${esc(p.video_url)}" target="_blank" rel="noopener">Video</a>` : ""}</span></div>`).join("")}</div>`;
+  return lt(coach() ? "Search" : "Your pitches", d.rows.length < d.summary.pitches ? `Newest ${d.rows.length} of ${d.summary.pitches} pitches` : `${d.summary.pitches} pitches`) + filters
+    + `<section class="card">${pitchSummary(d.summary)}${seg}<div class="pics">${heatMap(d.grid, f.metric)}${d.spray.length ? sprayChart(d.spray) : ""}</div></section>`
+    + `<section class="card"><div class="hd"><h3>Pitches</h3><span class="muted small">newest first</span></div>${list}</section>`;
+}
+const ordinal = (n) => n + (n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th");
 
 /* ---------- player profile: next game, opponent, last game, season, year over year ---------- */
 const PROF = {};
@@ -629,6 +750,7 @@ function profileSections(id, self) {
       ${improve.length ? `<h4>What to improve</h4><div class="pats">${improve.map((x) => pat(x, false)).join("")}</div>` : ""}
       ${!strengths.length && !improve.length ? `<p class="muted small" style="margin:0">${cur.source ? `From a ${esc(cur.source)}. Claude reads it and names strengths and what to improve once it's connected.` : m.pa < 40 ? `Not enough plate appearances yet to call anything a pattern.` : `Nothing stands out from the team averages.`}</p>` : ""}
       ${byLine(n)}</section>`);
+    out.push(pitchCard(id, cur.season));
   } else out.push(`<section class="card"><h3>Season</h3><p class="muted" style="margin:0">No college plate appearances found for ${self ? "you" : "him"} in the NCAA play-by-play yet.</p></section>`);
 
   // year over year
@@ -639,6 +761,7 @@ function profileSections(id, self) {
       ${P.seasons.map((s) => `<tr><td>${esc(s.season)}${s.school !== P.ncaaTeam ? `<span class="muted small"> · ${esc(s.schoolName)}</span>` : ""}</td><td class="n">${esc(s.metrics.pa)}</td><td class="n">${f3(s.metrics.avg)}/${f3(s.metrics.obp)}/${f3(s.metrics.slg)}</td><td class="n">${pc(s.metrics.kPct)}</td><td class="n">${pc(s.metrics.bbPct)}</td><td class="n">${pc(s.metrics.whiffPct)}</td><td class="n">${pc(s.metrics.batted.gbPct)}</td></tr>`).join("")}
       </tbody></table></div></section>`);
   }
+  if (!self) out.push(`<button class="btn soft noprint" data-act="print">Print or save as PDF</button>`);
   if (!self && coach() && d.claude) out.push(`<button class="btn soft" data-act="rewrite" data-id="${esc(id)}"${st.writing ? " disabled" : ""}>${st.writing ? "Claude is writing…" : "Rewrite with Claude now"}</button>`);
   return out.join("");
 }
@@ -717,6 +840,7 @@ function scoutPage() {
       ${p.hitters.length ? `<div class="mu">${p.hitters.map((h) => `<button class="murow" data-act="sheet" data-s="player" data-id="${esc(h.id)}"><b>${esc(h.name)}</b>${h.notes.length ? `<span>${esc(h.notes.join(" "))}</span>` : ""}${h.faced.length ? `<span class="muted">Faced him: ${esc(h.faced.map((o) => (OUTC[o] || o).toLowerCase()).join(", "))}</span>` : ""}</button>`).join("")}</div>` : (p.tendencies || []).length ? "" : `<p class="small muted" style="margin:0">Nothing stands out against your hitters.</p>`}</div>`;
     const sec = (title, xs, tag) => xs.length ? `<section class="card"><div class="hd"><h3>${title}</h3></div>${xs.map((p) => card(p, tag(p))).join("")}</section>` : "";
     body = `<section class="card"><div class="nextline"><b>${esc(d.opponent.name)}</b><span>${d.next ? "Next: " + esc(gameDay(d.next.date)) : esc(d.season) + " season"}</span></div>
+        <div class="actions noprint"><button class="btn sm soft" data-act="print">Print or save as PDF</button></div>
         <p class="small muted" style="margin:0">From their last ${d.total} games, through ${esc(gameDay(d.through))}${d.complete ? "" : ` · loading ${d.loaded} of ${d.total}…`}. Pitch types, velocity and which hand they throw with come with TrackMan.</p></section>`
       + sec("Weekend rotation", d.rotation, (p) => p.day + " starter")
       + sec("Midweek", d.midweek, (p) => p.day + " starter")
@@ -908,6 +1032,7 @@ addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
 
 /* ---------- actions ---------- */
 document.addEventListener("change", (e) => {
+  if (e.target.dataset.sf) { S.sf[e.target.dataset.sf] = e.target.value; return renderPage(); }
   if (e.target.id !== "sc-opp") return;
   SC.opp = e.target.value; loadScout(SC.opp); renderPage();
 });
@@ -958,6 +1083,10 @@ document.addEventListener("click", async (e) => {
     if (a === "ftp-remove") { if (!confirm("Disconnect the TrackMan file server? Pitches already imported stay.")) return; await api("integrations", { method: "DELETE", query: { team: T, source: "trackman_ftp" } }); S.ftpResult = null; loadIntg(true); toast("Disconnected"); return closeSheet(); }
     if (a === "copy-text") { try { await navigator.clipboard.writeText(b.dataset.v); toast("Copied"); } catch { toast("Select the text to copy it"); } return; }
     if (a === "tm-rotate") { if (!confirm("Make new addresses? The old ones stop working, and TrackMan support will need the new ones.")) return; const d = await api("trackman", { method: "POST", query: { team: T, rotate: "1" } }); TMF[T] = { data: d }; toast("New addresses made"); return renderPage(); }
+    if (a === "pd") { S.pd[b.dataset.k] = b.dataset.v; return S.sheet ? renderSheet(false) : renderPage(); }
+    if (a === "sf-metric") { S.sf.metric = b.dataset.v; return renderPage(); }
+    if (a === "pd-search") { S.sf = { player: b.dataset.id, season: b.dataset.season, type: "", count: "", result: "", hand: "", metric: "swingPct" }; closeSheet(true); return selectTab("search"); }
+    if (a === "print") { document.title = (S.sheet && S.sheet.kind === "player" ? fullName(playerById(S.sheet.id) || { first: "Player", last: "" }) : "Scouting report") + " · " + S.team.team.name; window.print(); document.title = APP_NAME; return; }
     if (a === "rewrite") { loadProfile(id, true); return renderSheet(false); }
     if (a === "ncaa-sync") { b.disabled = true; let n = 0, g = 0;
       try { for (let i = 0; i < 40; i++) { b.textContent = n ? `Updating… ${g} games` : "Updating…"; const r = await api("sync", { method: "POST", query: { team: T } }); n++; g += (r.did && r.did.games) || 0;

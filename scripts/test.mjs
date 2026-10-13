@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 import crypto from "node:crypto";
 process.env.INTEGRATIONS_KEY ||= crypto.randomBytes(32).toString("base64");
 import { memoryDatabase, call } from "./_vercel.js";
-import { seedDemo, createAdmin, DEV_CODES, DEMO_TEAM } from "./_seed.js";
+import { seedDemo, createAdmin, DEV_CODES, DEMO_TEAM, ROSTER } from "./_seed.js";
+import { buildDemoSeasons } from "./_demo-season.js";
 import { parseRosterHtml, fetchRoster } from "../api/_roster.js";
 import { parsePA, parseGame, nameKey } from "../api/_ncaa.js";
 import { metrics, flags } from "../api/_hitting.js";
@@ -236,6 +237,30 @@ await test("integrations: coaches only, and nothing changes while previewing", a
   assert.equal((await call("integrations", { method: "PUT", code: COACH, query: { team: T, source: "trackman_ftp" }, body: { host: "", username: "a" } })).status, 400);
   const bad = await call("integrations", { method: "PUT", code: COACH, query: { team: T, source: "trackman_ftp" }, body: { host: "localhost", username: "a", password: "b" } });
   assert.deepEqual([bad.body.ok, /isn't allowed|Couldn't/.test(bad.body.error)], [false, true], "private hosts refused");
+});
+
+console.log("demo league and pitch search");
+await test("the simulated league looks like college baseball and is the same every time", async () => {
+  const r = await buildDemoSeasons({ roster: ROSTER.map((x) => [x[0], x[1], x[4], x[6]]), force: true });
+  assert.ok(r.games > 300 && r.pitches > 70000, JSON.stringify(r));
+  const L = await dbone(`SELECT count(*)::float pa, sum(CASE WHEN hit THEN 1 ELSE 0 END)::float / sum(CASE WHEN ab THEN 1 ELSE 0 END) avg,
+    sum(CASE WHEN outcome LIKE 'K%' THEN 1 ELSE 0 END)::float / count(*) k FROM ncaa_pas WHERE game_id LIKE 'demo-2026%'`);
+  assert.ok(L.avg > 0.23 && L.avg < 0.3, "league average " + L.avg); assert.ok(L.k > 0.13 && L.k < 0.26, "strikeout rate " + L.k);
+  const again = await buildDemoSeasons({ roster: ROSTER.map((x) => [x[0], x[1], x[4], x[6]]), force: true });
+  assert.deepEqual(again, r, "deterministic");
+});
+await test("pitch search: filters, pictures, and players see only their own pitches", async () => {
+  const team = (await call("team", { code: COACH, query: { id: T } })).body;
+  const k = team.players.find((p) => p.last === "Kowalczyk"), a = team.players.find((p) => p.last === "Avery");
+  const all = (await call("pitches", { code: COACH, query: { team: T, player: k.id, season: "2026" } })).body;
+  assert.ok(all.summary.pitches > 300 && all.grid.length === 5 && all.spray.length > 50);
+  const ch = (await call("pitches", { code: COACH, query: { team: T, player: k.id, season: "2026", result: "chase" } })).body;
+  assert.ok(ch.summary.pitches > 0 && ch.summary.pitches < all.summary.pitches);
+  const av = (await call("pitches", { code: COACH, query: { team: T, player: a.id, season: "2026" } })).body;
+  assert.ok(av.summary.chasePct < all.summary.chasePct, "the disciplined hitter chases less than the free swinger");
+  const mine = (await call("pitches", { code: AVERY, query: { team: T, player: k.id } })).body;
+  assert.ok(mine.rows.length && mine.rows.every((r) => r.batter_name === "Mason Avery"), "a player asking for a teammate gets his own pitches");
+  assert.equal((await call("pitches", { code: OTHER_COACH, query: { team: T } })).status, 404);
 });
 
 console.log("roster import");

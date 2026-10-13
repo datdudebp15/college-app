@@ -6,7 +6,7 @@ import { query } from "../api/_db.js";
 import { nameKey } from "../api/_ncaa.js";
 import { DEMO_LEAGUE } from "../api/_demo.js";
 
-export const DEMO_SEASON_VERSION = 3;
+export const DEMO_SEASON_VERSION = 4;
 const SEASONS = [2025, 2026];
 
 /* ---------- random numbers ---------- */
@@ -111,7 +111,7 @@ function plateAppearance(p, h) {
       const fence = 325 + 70 * (1 - Math.abs(bearing) / 45);
       const bb = la < 10 ? "GB" : la < 25 ? "LD" : la < 50 ? "FB" : "PU";
       let out;
-      if (bb === "FB" && dist >= fence) out = "HR";
+      if ((bb === "FB" || bb === "LD") && dist >= fence) out = "HR";
       else {
         const hitP = bb === "GB" ? 0.19 + Math.max(0, ev - 88) * 0.011 : bb === "LD" ? 0.6 + Math.max(0, ev - 92) * 0.008 : bb === "FB" ? 0.07 + Math.max(0, dist - 290) * 0.0035 : 0.02;
         if (rand() < hitP) out = bb === "GB" ? (rand() < 0.08 ? "2B" : "1B") : dist > 300 && rand() < 0.08 ? "3B" : dist > 240 && rand() < 0.42 ? "2B" : "1B";
