@@ -18,7 +18,7 @@
   --accent:#2F5BFF; --accent-ink:#FFFFFF; --accent-soft:rgba(47,91,255,.10); --ember:#FF6B3D;
   --good:#1FB866; --good-soft:rgba(31,184,102,.12); --warn:#F59E0B; --bad:#EF4444; --bad-soft:rgba(239,68,68,.10);
   --glass:rgba(255,255,255,.55); --glass-hi:rgba(255,255,255,.95); --glass-edge:rgba(255,255,255,.7); --glass-shadow:0 12px 34px rgba(20,30,60,.16),0 2px 6px rgba(20,30,60,.06);
-  --lens:rgba(255,255,255,.85); --orb1:#7AA2FF; --orb2:#FFB08A; --orb3:#9EE6FF; --orb-o:.55;
+  --lens:rgba(255,255,255,.85); --orb1:#8FB0FF; --orb2:#C9D7FF; --orb-o:.38;
   --font:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
   /* Spring curves: replaced at load by real spring simulations (linear()), these are the fallbacks. */
@@ -31,7 +31,7 @@
   --accent:#6B8CFF; --accent-ink:#0B0D12; --accent-soft:rgba(107,140,255,.16); --ember:#FF8A5C;
   --good:#34D399; --good-soft:rgba(52,211,153,.14); --bad:#F87171; --bad-soft:rgba(248,113,113,.14);
   --glass:rgba(38,42,54,.5); --glass-hi:rgba(255,255,255,.22); --glass-edge:rgba(255,255,255,.14); --glass-shadow:0 14px 38px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.3);
-  --lens:rgba(255,255,255,.14); --orb1:#2C4BD6; --orb2:#B8461F; --orb3:#0E7490; --orb-o:.42;
+  --lens:rgba(255,255,255,.14); --orb1:#2A47C9; --orb2:#1B2A66; --orb-o:.32;
   color-scheme:dark;
 }}
 *{box-sizing:border-box}
@@ -42,15 +42,13 @@ button{cursor:pointer;-webkit-user-select:none;user-select:none}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .muted{color:var(--muted)} .small{font-size:13px}
 
-/* color field behind everything, so the glass has something to bend */
+/* one soft cobalt glow behind everything, so the glass has something to bend */
 #field{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 #field i{position:absolute;border-radius:50%;filter:blur(70px);opacity:var(--orb-o);will-change:transform}
 #field i:nth-child(1){width:60vmax;height:60vmax;left:-20vmax;top:-25vmax;background:var(--orb1);animation:drift1 26s ease-in-out infinite alternate}
 #field i:nth-child(2){width:46vmax;height:46vmax;right:-18vmax;top:20vh;background:var(--orb2);animation:drift2 31s ease-in-out infinite alternate}
-#field i:nth-child(3){width:40vmax;height:40vmax;left:10vw;bottom:-22vmax;background:var(--orb3);animation:drift3 23s ease-in-out infinite alternate}
 @keyframes drift1{to{transform:translate(12vmax,8vmax) scale(1.1)}}
 @keyframes drift2{to{transform:translate(-10vmax,-6vmax) scale(.92)}}
-@keyframes drift3{to{transform:translate(8vmax,-10vmax) scale(1.08)}}
 
 /* ---------- liquid glass ---------- */
 .glass{position:relative;isolation:isolate;background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(190%);backdrop-filter:blur(22px) saturate(190%);
@@ -200,7 +198,7 @@ body.sheet-open #sheet{transform:translateY(0)}
 </style>
 </head>
 <body>
-<div id="field" aria-hidden="true"><i></i><i></i><i></i></div>
+<div id="field" aria-hidden="true"><i></i><i></i></div>
 <div id="stage">
   <header id="top" hidden><div class="in"><span class="l"></span><span class="t glass"></span><span class="r"></span></div></header>
   <main id="page"></main>
