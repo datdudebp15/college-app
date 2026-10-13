@@ -35,6 +35,9 @@
     },
     "api/today.js": {
       "maxDuration": 30
+    },
+    "api/integrations.js": {
+      "maxDuration": 60
     }
   }
 }

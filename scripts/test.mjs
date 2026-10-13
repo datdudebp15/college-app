@@ -1,12 +1,18 @@
 // Permission tests: who can see and change what. Runs the real api/ handlers on an in-memory Postgres.
 //   node scripts/test.mjs
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
+process.env.INTEGRATIONS_KEY ||= crypto.randomBytes(32).toString("base64");
 import { memoryDatabase, call } from "./_vercel.js";
 import { seedDemo, createAdmin, DEV_CODES, DEMO_TEAM } from "./_seed.js";
 import { parseRosterHtml, fetchRoster } from "../api/_roster.js";
 import { parsePA, parseGame, nameKey } from "../api/_ncaa.js";
 import { metrics, flags } from "../api/_hitting.js";
 import { matchup, likelyStarter, aliases, nameQuality } from "../api/_opponent.js";
+import { trackmanPitches, pitchType, pitchCall } from "../api/_trackman_csv.js";
+import { seal, open } from "../api/_secrets.js";
+import { runPull } from "../api/integrations.js";
+import { query as dbq, one as dbone } from "../api/_db.js";
 
 await memoryDatabase();
 await seedDemo(DEV_CODES);
@@ -169,6 +175,67 @@ await test("a new token turns the old URLs off", async () => {
   await call("trackman", { method: "POST", code: COACH, query: { team: T, rotate: "1" } });
   assert.equal((await call("trackman", { method: "POST", query: { feed: old, kind: "ball" }, body: { PlayId: "x" } })).status, 404);
   assert.equal((await call("trackman", { method: "POST", code: ADMIN, query: { team: T, rotate: "1" }, headers: { "x-view-as": "coach" } })).status, 403, "not while previewing");
+});
+
+console.log("trackman ftp");
+// Made-up TrackMan rows (column names as in TrackMan's export; fictional teams and players)
+const TM_HEAD = "PitchNo,Date,Time,PAofInning,PitchofPA,Pitcher,PitcherId,PitcherThrows,PitcherTeam,Batter,BatterId,BatterSide,BatterTeam,Inning,Top/Bottom,Outs,Balls,Strikes,TaggedPitchType,AutoPitchType,PitchCall,KorBB,TaggedHitType,PlayResult,RelSpeed,SpinRate,PlateLocHeight,PlateLocSide,ExitSpeed,Angle,Direction,Distance,Bearing,GameID,PitchUID";
+const tmCsv = (rows) => [TM_HEAD, ...rows].join("\r\n");
+const TM_ROWS = [
+  "1,2026-04-18,18:02:11,1,1,\"Gull, Harry\",9001,Right,HAR_CIT,\"Avery, Mason\",8001,Right,RID_STA,1,Bottom,0,0,0,Fastball,FourSeamFastBall,StrikeCalled,Undefined,Undefined,Undefined,91.4,2310,2.6,-0.4,,,,,,20260418-Ridge-1,uid-1",
+  "2,2026-04-18,18:02:40,1,2,\"Gull, Harry\",9001,Right,HAR_CIT,\"Avery, Mason\",8001,Right,RID_STA,1,Bottom,0,0,1,Slider,Slider,StrikeSwinging,Undefined,Undefined,Undefined,82.0,2550,1.4,0.9,,,,,,20260418-Ridge-1,uid-2",
+  "3,2026-04-18,18:03:05,1,3,\"Gull, Harry\",9001,Right,HAR_CIT,\"Avery, Mason\",8001,Right,RID_STA,1,Bottom,0,0,2,Undefined,ChangeUp,InPlay,Undefined,LineDrive,Single,84.1,1700,2.1,0.2,98.6,14.2,,201.5,-12.3,20260418-Ridge-1,uid-3",
+];
+await test("reads TrackMan rows: types, calls, names, tracking", async () => {
+  const ps = trackmanPitches(tmCsv(TM_ROWS));
+  assert.equal(ps.length, 3);
+  assert.deepEqual([ps[0].pitchType, ps[0].call, ps[0].velo, ps[0].batter.key, ps[0].pitcher.key, ps[0].batterSide, ps[0].pitcherThrows], ["Fastball", "called_strike", 91.4, "avery|m", "gull|h", "R", "R"]);
+  assert.deepEqual([ps[2].pitchType, ps[2].call, ps[2].ev, ps[2].la, ps[2].bearing, ps[2].result, ps[2].hitType], ["Changeup", "in_play", 98.6, 14.2, -12.3, "Single", "LineDrive"]);
+  assert.equal(ps[1].id, "tm-uid-2");
+  assert.equal(pitchType("Undefined", "TwoSeamFastBall"), "Sinker"); assert.equal(pitchCall("FoulBallNotFieldable"), "foul"); assert.equal(pitchCall("BallinDirt"), "ball");
+  assert.equal(trackmanPitches("PitchNo,Date\n1,2026-04-18").length, 0, "rows without a pitch call are skipped");
+});
+await test("logins are sealed, and a different key can't open them", async () => {
+  const s = seal({ username: "u", password: "p@ss" });
+  assert.ok(!s.includes("p@ss")); assert.deepEqual(open(s), { username: "u", password: "p@ss" });
+  const keep = process.env.INTEGRATIONS_KEY; process.env.INTEGRATIONS_KEY = crypto.randomBytes(32).toString("base64");
+  assert.throws(() => open(s)); process.env.INTEGRATIONS_KEY = keep;
+});
+// a fake FTP server: folders and files in memory, and a record of which folders were listed
+function fakeFtp(tree) {
+  const listed = [];
+  const factory = () => ({
+    async list(dir) { listed.push(dir); return (tree[dir] || []).map((n) => (typeof n === "string" ? { name: n, isDirectory: true, isFile: false } : { name: n.name, isDirectory: false, isFile: true, size: n.body.length })); },
+    async downloadTo(w, p) { const dir = p.slice(0, p.lastIndexOf("/")), name = p.slice(p.lastIndexOf("/") + 1); const f = (tree[dir] || []).find((x) => x.name === name); await new Promise((r) => w.write(Buffer.from(f.body), r)); },
+    close() {},
+  });
+  return { factory, listed };
+}
+await test("pulls new TrackMan files newest first, skips old seasons, never imports a file twice", async () => {
+  const team = await dbone(`SELECT * FROM teams WHERE id = $1`, [T]);
+  await dbq(`INSERT INTO integrations (team_id, source, config, secret, status) VALUES ($1, 'trackman_ftp', $2::jsonb, $3, 'connected')`, [T, JSON.stringify({ host: "ftp.example.com", path: "/" }), seal({ username: "u", password: "p" })]);
+  const integ = await dbone(`SELECT * FROM integrations WHERE team_id = $1 AND source = 'trackman_ftp'`, [T]);
+  const tree = { "/": ["v3"], "/v3": ["2022", "2026"], "/v3/2022": ["05"], "/v3/2026": ["04"], "/v3/2026/04": ["18"], "/v3/2026/04/18": ["CSV"], "/v3/2026/04/18/CSV": [{ name: "20260418-Ridge-1.csv", body: tmCsv(TM_ROWS) }, { name: "notes.txt", body: "x" }] };
+  const ftp = fakeFtp(tree);
+  const r = await runPull(team, integ, 30000, ftp.factory);
+  assert.deepEqual([r.done, r.imported, r.pitches, r.errors.length], [true, 1, 3, 0]);
+  assert.ok(!ftp.listed.includes("/v3/2022"), "seasons before the window aren't walked");
+  const rows = await dbq(`SELECT batter_key, pitcher_key, bat_seo, pitch_type, call, source FROM pitches WHERE source = 'trackman' ORDER BY id`);
+  assert.equal(rows.length, 3);
+  assert.equal(rows[0].bat_seo, "team:" + T, "our team, found from the most common TrackMan code");
+  assert.equal(rows[0].batter_key, "avery|m");
+  const again = await runPull(team, await dbone(`SELECT * FROM integrations WHERE team_id = $1 AND source = 'trackman_ftp'`, [T]), 30000, fakeFtp(tree).factory);
+  assert.equal(again.imported, 0, "same file, same size: skipped");
+  const st = (await call("integrations", { code: COACH, query: { team: T } })).body.sources.trackman_ftp;
+  assert.deepEqual([st.files, st.pitches, st.username, st.caughtUpTo], [1, 3, "u", "2026-04-18"]);
+  assert.ok(!JSON.stringify(st).includes('"p"'), "the password never comes back");
+});
+await test("integrations: coaches only, and nothing changes while previewing", async () => {
+  assert.equal((await call("integrations", { code: AVERY, query: { team: T } })).status, 403);
+  assert.equal((await call("integrations", { method: "PUT", code: ADMIN, query: { team: T, source: "trackman_ftp" }, headers: { "x-view-as": "coach" }, body: { host: "x.example.com", username: "a", password: "b" } })).status, 403);
+  assert.equal((await call("integrations", { method: "PUT", code: COACH, query: { team: T, source: "trackman_ftp" }, body: { host: "", username: "a" } })).status, 400);
+  const bad = await call("integrations", { method: "PUT", code: COACH, query: { team: T, source: "trackman_ftp" }, body: { host: "localhost", username: "a", password: "b" } });
+  assert.deepEqual([bad.body.ok, /isn't allowed|Couldn't/.test(bad.body.error)], [false, true], "private hosts refused");
 });
 
 console.log("roster import");

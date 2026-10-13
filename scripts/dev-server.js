@@ -18,6 +18,15 @@ if (fs.existsSync(envFile)) {
     if (m && m[2] && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
   }
 }
+// A local key for sealing integration logins, made once and kept in .env.local.
+if (!process.env.INTEGRATIONS_KEY) {
+  const crypto = await import("node:crypto");
+  process.env.INTEGRATIONS_KEY = crypto.randomBytes(32).toString("base64");
+  fs.appendFileSync(envFile, `
+# Seals integration logins in the local database (made by the dev server)
+INTEGRATIONS_KEY=${process.env.INTEGRATIONS_KEY}
+`);
+}
 const PORT = Number(process.env.PORT) || 3020;
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml", ".json": "application/json", ".webmanifest": "application/manifest+json" };
 

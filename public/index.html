@@ -114,7 +114,7 @@ main{position:relative;max-width:820px;margin:0 auto;padding:calc(env(safe-area-
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .grid .full{grid-column:1/-1}
 label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:13px;color:var(--muted);min-width:0}
-input[type=text],input[type=number],select{width:100%;padding:0 14px;border:0;border-radius:14px;background:var(--fill-2);min-height:48px;font-size:17px;font-weight:600;color:var(--ink);transition:box-shadow .2s}
+input[type=text],input[type=number],input[type=password],select{width:100%;padding:0 14px;border:0;border-radius:14px;background:var(--fill-2);min-height:48px;font-size:17px;font-weight:600;color:var(--ink);transition:box-shadow .2s}
 input:focus,select:focus{outline:none;box-shadow:0 0 0 3px var(--accent-soft),inset 0 0 0 1.5px var(--accent)}
 
 /* lists */
@@ -206,6 +206,7 @@ body.sheet-open #sheet{transform:translateY(0)}
 .seg button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 4px rgba(20,30,60,.14),0 0 0 .5px rgba(20,30,60,.06)}
 #tabs button{min-width:62px;padding:0 10px}
 .list.inset{box-shadow:0 0 0 1px var(--line);border-radius:18px}
+.num svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .num.up{background:var(--good-soft);color:var(--good)} .num.k{background:var(--bad-soft);color:var(--bad)} .num.work{background:rgba(245,158,11,.16);color:var(--warn)}
 .chip.bad{background:var(--bad-soft);color:var(--bad)} .chip.warn{background:rgba(245,158,11,.16);color:var(--warn)}
 details.more summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;justify-content:space-between;gap:10px}
@@ -224,6 +225,7 @@ details.more summary::-webkit-details-marker{display:none}
 .nextline b{font-size:22px;font-weight:800;letter-spacing:-.03em}
 .nextline span{color:var(--muted);font-weight:600}
 .card.next{background:linear-gradient(135deg,var(--accent-soft),transparent 70%),var(--card)}
+.note.warn{background:rgba(245,158,11,.14);color:var(--ink)}
 .note.preview{display:flex;align-items:center;justify-content:space-between;gap:12px;background:color-mix(in srgb,var(--ember) 14%,transparent);color:var(--ink)}
 .note.preview b{font-weight:800}
 .lede{margin:0;font-size:18px;font-weight:800;letter-spacing:-.02em}
@@ -291,6 +293,7 @@ const I = {
   roster: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.5"/><path d="M15.8 14.2c2.3.2 4 1.8 4.6 4.8"/></svg>',
   staff: '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 4.5V3.5h6v1M9 10h6M9 14h6M9 18h3"/></svg>',
   team: '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.3-3 7.7-7 9.5-4-1.8-7-5.2-7-9.5V6z"/><path d="M9 12l2 2 4-4"/></svg>',
+  plug: '<svg viewBox="0 0 24 24"><path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/></svg>',
   today: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>',
   scout: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5M11 7.5v7M7.5 11h7"/></svg>',
   me: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.8 3.6-6 7-6s6.2 2.2 7 6"/></svg>',
@@ -444,11 +447,66 @@ function teamPage() {
       <div><b>${S.team.staff.length}</b><span>Coaches</span></div><div><b>${S.team.players.filter((p) => p.access === "active").length}</b><span>Players signed in</span></div></div></section>
     <section class="card"><div class="hd"><h3>Roster from your school's site</h3></div><p class="muted" style="margin:0">${t.rosterUrl ? `Last imported from ${esc(new URL(t.rosterUrl).hostname)}. Import again to pick up new numbers, positions and classes.` : "Bring in your hitters with their numbers, positions, classes and bats/throws."}</p>
       <button class="btn soft" data-act="sheet" data-s="import">${t.rosterUrl ? "Import again" : "Import roster"}</button></section>
-    ${!S.viewAs ? trackmanCard() : ""}
+    ${!S.viewAs ? integrationsCard() : ""}
     <section class="card"><div class="hd"><h3>NCAA games</h3><button class="link" data-act="sheet" data-s="editteam">Change</button></div>
       <p class="muted" style="margin:0">${t.ncaaSeo ? `Linked to <b style="color:var(--ink)">${esc(t.ncaaSeo)}</b> on ncaa.com. Box scores and play-by-play update every night; this brings them in now.` : "Not linked yet. Updating finds your team on ncaa.com by its name."}</p>
       <button class="btn soft" data-act="ncaa-sync">Update games now</button></section>` + accountCard();
 }
+/* ---------- Integrations ---------- */
+const INTG = {};
+function loadIntg(force) {
+  const k = S.team.team.id;
+  if (INTG[k] && !force && (INTG[k].loading || INTG[k].data)) return INTG[k];
+  INTG[k] = { loading: true, data: INTG[k] && INTG[k].data };
+  api("integrations", { query: { team: k } }).then((d) => { INTG[k] = { data: d }; }).catch((e) => { INTG[k] = { error: e.code }; })
+    .finally(() => { if (S.view === "team" && S.tab === "team") renderPage(); if (S.sheet && /^int-/.test(S.sheet.kind)) renderSheet(false); });
+  return INTG[k];
+}
+const when = (x) => x ? new Date(x).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
+function intgRows(d) {
+  const f = d.sources.trackman_ftp, l = d.sources.trackman_live;
+  return [
+    ["int-ftp", "TrackMan pitch data", f ? (f.connected ? `${f.files} game file${f.files === 1 ? "" : "s"} · ${f.pitches.toLocaleString()} pitches${f.lastImport ? " · last " + when(f.lastImport) : ""}` : f.lastError || "Saved") : "Automatic every night from your TrackMan file server",
+      f ? (f.connected ? (f.lastError ? ["warn", "Check"] : ["active", "Connected"]) : ["bad", "Error"]) : ["", "Set up"]],
+    ["int-live", "TrackMan live feed", l.lastEventAt ? "Last pitch " + when(l.lastEventAt) : l.validatedAt ? "Connected; waiting for a game" : "Pitches during games, within seconds",
+      l.lastEventAt ? ["active", "Live"] : l.validatedAt ? ["invited", "Connected"] : ["", "Set up"]],
+    ["int-api", "TrackMan video", "A clip on every pitch, after each game", ["", "Soon"]],
+    ["int-syn", "Synergy video", "Opponent video; needs a Synergy agreement", ["", "Later"]],
+  ];
+}
+function integrationsCard() {
+  const st = loadIntg(), d = st.data;
+  return `<section class="card"><div class="hd"><h3>Integrations</h3></div>
+    <p class="muted" style="margin:0">Connect once; everything after that is automatic.</p>
+    ${d ? `<div class="list inset">${intgRows(d).map(([s, title, meta, [cls, label]]) => `<button class="row" data-act="sheet" data-s="${s}"><span class="num">${I.plug}</span><span><b>${esc(title)}</b><span class="meta">${esc(meta)}</span></span><span class="chip ${cls}">${esc(label)}</span></button>`).join("")}</div>`
+      : st.error ? `<p class="muted" style="margin:0">Couldn't load integrations right now.</p>` : `<div class="skel"></div>`}</section>`;
+}
+function ftpSheet() {
+  const d = (INTG[S.team.team.id] || {}).data; if (!d) return ["TrackMan pitch data", `<div class="skel"></div>`];
+  const f = d.sources.trackman_ftp, c = (f && f.config) || {}, r = S.ftpResult;
+  const fld = (label, id, val, extra = "") => `<label class="f">${label}<input type="text" id="${id}" value="${esc(val ?? "")}" autocomplete="off" ${extra}></label>`;
+  const proto = c.protocol || "ftps";
+  return ["TrackMan pitch data", `
+    <p style="margin:0">Every night the app looks on your TrackMan file server for new game files and adds every pitch: type, velocity, spin, location, exit velocity, launch angle and spray. Your TrackMan or ops contact has the login.</p>
+    ${!d.canStore ? `<div class="note warn">This server can't store logins yet (INTEGRATIONS_KEY isn't set).</div>` : ""}
+    ${f && f.lastError ? `<div class="note warn">${esc(f.lastError)}</div>` : ""}
+    ${r ? `<div class="note ${r.ok ? "" : "warn"}">${r.ok ? `Connected. Found ${r.test.entries} item${r.test.entries === 1 ? "" : "s"} in the folder${r.test.sample.length ? ": " + esc(r.test.sample.join(", ")) : ""}.` : esc(r.error)}</div>` : ""}
+    <div class="grid">
+      ${fld("Server address", "ftp-host", c.host, 'placeholder="from your TrackMan login" inputmode="url"').replace('<label class="f">', '<label class="f full">')}
+      <label class="f">Connection<select id="ftp-proto"><option value="ftps"${proto === "ftps" ? " selected" : ""}>FTPS (secure)</option><option value="ftp"${proto === "ftp" ? " selected" : ""}>FTP</option></select></label>
+      ${fld("Port", "ftp-port", c.port || 21, 'inputmode="numeric"')}
+      ${fld("Username", "ftp-user", f && f.username)}
+      <label class="f">Password<input type="password" id="ftp-pass" autocomplete="new-password" placeholder="${f ? "Saved; leave blank to keep" : ""}"></label>
+      ${fld("Folder", "ftp-path", c.path || "/")}
+      ${fld("Your team's TrackMan code", "ftp-code", c.teamCode || "", `placeholder="${esc(f && f.detectedTeamCode ? "found: " + f.detectedTeamCode : "found automatically")}"`)}
+    </div>
+    <p class="small muted" style="margin:0">The login is encrypted before it's stored and is never shown again. Only this team's coaches can change it.</p>
+    <button class="btn wide" data-act="ftp-save">${f ? "Save and test" : "Connect"}</button>
+    ${f ? `<section class="card"><div class="hd"><h3>Imports</h3><span class="chip ${f.connected ? "active" : "bad"}">${f.connected ? "Connected" : "Error"}</span></div>
+      <div class="stats"><div><b>${f.files}</b><span>Game files</span></div><div><b>${f.pitches.toLocaleString()}</b><span>Pitches</span></div><div><b>${esc(f.caughtUpTo ? gameDay(f.caughtUpTo) : "–")}</b><span>Caught up to</span></div><div><b>${esc(f.lastRunAt ? when(f.lastRunAt) : "–")}</b><span>Last check</span></div></div>
+      <div class="actions"><button class="btn soft" data-act="ftp-pull">Pull now</button><button class="btn danger" data-act="ftp-remove">Disconnect</button></div></section>` : ""}`];
+}
+
 const TMF = {};
 function trackmanCard() {
   const k = S.team.team.id, st = TMF[k];
@@ -789,6 +847,11 @@ const SHEETS = {
     html += `<div class="actions">${S.me.teams.length > 1 || u.admin ? `<button class="btn soft" data-act="teams">${inTeam ? "Switch team" : "All teams"}</button>` : ""}<button class="btn danger" data-act="signout">Sign out</button></div>`;
     return ["Profile", html];
   },
+  "int-ftp": () => ftpSheet(),
+  "int-live": () => ["TrackMan live feed", trackmanCard().replace(/^<section class="card"><div class="hd"><h3>TrackMan live feed<\/h3>/, '<section class="card"><div class="hd"><h3>Addresses</h3>')],
+  "int-api": () => ["TrackMan video", `<p style="margin:0">TrackMan's Data API adds a video clip to every pitch after each game (Edgertronic or iPad video on Portable B1, play video on Stadium V3), plus the full data without the file server.</p>
+    <p class="muted" style="margin:0">It's an add-on your team buys from TrackMan, with their Data API terms signed. The connection here is built once we have TrackMan's Quick Start guide.</p>`],
+  "int-syn": () => ["Synergy video", `<p style="margin:0">Opponent video comes from Synergy, which films every Division I game. Showing it inside the app needs an agreement with Synergy (Sportradar).</p>`],
   import: () => ["Import roster", `<label class="f">Roster page on your school's site<input type="text" id="ri-url" inputmode="url" autocomplete="off" placeholder="https://…/sports/baseball/roster" value="${esc(S.team.team.rosterUrl || "")}"></label>
     <label style="display:flex;align-items:center;gap:10px;font-weight:600"><input type="checkbox" id="ri-p" style="width:20px;height:20px"> Include pitchers</label>
     <p class="muted small" style="margin:0">Hitters come in with number, position, class and bats/throws. Importing again updates them and never removes anyone. Two-way players are always included.</p>
@@ -848,7 +911,7 @@ document.addEventListener("click", async (e) => {
     if (a === "signout") return signOut();
     if (a === "team") return openTeam(id);
     if (a === "teams") { closeSheet(true); S.viewAs = null; ls.set("oc-team", null); S.me = await api("me"); return showTeams(); }
-    if (a === "sheet") { if (b.dataset.s === "profile") S.pickPlayer = false; return openSheet(b.dataset.s, { id }); }
+    if (a === "sheet") { if (b.dataset.s === "profile") S.pickPlayer = false; if (b.dataset.s === "int-ftp") S.ftpResult = null; return openSheet(b.dataset.s, { id }); }
     if (a === "close") return closeSheet();
     if (a === "confirm") { S.confirm = id; haptic(); return renderSheet(false); }
     if (a === "unconfirm") { S.confirm = null; return renderSheet(false); }
@@ -869,6 +932,14 @@ document.addEventListener("click", async (e) => {
     if (a === "view-as-player" || a === "preview-player") { const p = (S.roster || S.team.players).find((x) => x.id === id); return startPreview("player", id, p ? fullName(p) : "a player"); }
     if (a === "exit-preview") return exitPreview();
     if (a === "scout-open") { SC.opp = b.dataset.opp; loadScout(SC.opp); return selectTab("scout"); }
+    if (a === "ftp-save") { b.disabled = true; b.textContent = "Testing the connection…";
+      try { const r = await api("integrations", { method: "PUT", query: { team: T, source: "trackman_ftp" }, body: { host: val("ftp-host"), protocol: val("ftp-proto"), port: val("ftp-port"), username: val("ftp-user"), password: (document.getElementById("ftp-pass") || {}).value || "", path: val("ftp-path"), teamCode: val("ftp-code") } });
+        S.ftpResult = r; toast(r.ok ? "Connected" : "Couldn't connect"); loadIntg(true); } finally { b.disabled = false; } return renderSheet(false); }
+    if (a === "ftp-pull") { b.disabled = true; let files = 0, pitches = 0;
+      try { for (let i = 0; i < 20; i++) { b.textContent = files ? `Pulling… ${files} files` : "Pulling…"; const r = await api("integrations", { method: "POST", query: { team: T, source: "trackman_ftp", action: "pull" } });
+          if (r.error) { toast(r.error); break; } files += r.imported || 0; pitches += r.pitches || 0; if (r.done) { toast(files ? `Added ${files} files, ${pitches.toLocaleString()} pitches` : "Already up to date"); break; } }
+        loadIntg(true); } finally { b.disabled = false; b.textContent = "Pull now"; } return; }
+    if (a === "ftp-remove") { if (!confirm("Disconnect the TrackMan file server? Pitches already imported stay.")) return; await api("integrations", { method: "DELETE", query: { team: T, source: "trackman_ftp" } }); S.ftpResult = null; loadIntg(true); toast("Disconnected"); return closeSheet(); }
     if (a === "copy-text") { try { await navigator.clipboard.writeText(b.dataset.v); toast("Copied"); } catch { toast("Select the text to copy it"); } return; }
     if (a === "tm-rotate") { if (!confirm("Make new addresses? The old ones stop working, and TrackMan support will need the new ones.")) return; const d = await api("trackman", { method: "POST", query: { team: T, rotate: "1" } }); TMF[T] = { data: d }; toast("New addresses made"); return renderPage(); }
     if (a === "rewrite") { loadProfile(id, true); return renderSheet(false); }

@@ -92,6 +92,21 @@ const SCHEMA = [
   `CREATE INDEX IF NOT EXISTS pitches_batter ON pitches (bat_seo, batter_key)`,
   `CREATE INDEX IF NOT EXISTS pitches_pitcher ON pitches (pitch_seo, pitcher_key)`,
   `CREATE INDEX IF NOT EXISTS pitches_game ON pitches (game_id, pa_idx)`,
+  `ALTER TABLE pitches ADD COLUMN IF NOT EXISTS pa_ref text`,
+  `ALTER TABLE pitches ADD COLUMN IF NOT EXISTS hit_type text`,
+  `ALTER TABLE pitches ADD COLUMN IF NOT EXISTS batter_name text`,
+  `ALTER TABLE pitches ADD COLUMN IF NOT EXISTS pitcher_name text`,
+  // A team's connected data sources. Secrets (logins) are sealed with INTEGRATIONS_KEY; config holds the rest.
+  `CREATE TABLE IF NOT EXISTS integrations (
+    team_id text NOT NULL REFERENCES teams(id) ON DELETE CASCADE, source text NOT NULL,
+    config jsonb NOT NULL DEFAULT '{}'::jsonb, secret text, enabled boolean NOT NULL DEFAULT true,
+    status text, last_run_at timestamptz, last_ok_at timestamptz, last_error text, updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (team_id, source)
+  )`,
+  `CREATE TABLE IF NOT EXISTS trackman_files (
+    team_id text NOT NULL REFERENCES teams(id) ON DELETE CASCADE, path text NOT NULL, size bigint, imported_at timestamptz,
+    pitches int, error text, PRIMARY KEY (team_id, path)
+  )`,
   // TrackMan live feed (Portable B1 / Stadium): one secret token per team in the webhook URLs, and every
   // message stored raw on arrival (TrackMan sends each once, with no retries). Parsed into pitches later.
   `CREATE TABLE IF NOT EXISTS trackman_feeds (

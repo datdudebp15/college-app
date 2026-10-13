@@ -3,11 +3,12 @@ import { query, hasDatabase, ensureSchema } from "./_db.js";
 import { syncTeam, today } from "./_sync.js";
 import { playerProfile } from "./_profile.js";
 import { note, seasonInput, postgameInput, opponentInput } from "./_writer.js";
+import { runPull } from "./integrations.js";
 
 // Pulls NCAA games for a team and writes the players' notes. Each call works for up to ~50 seconds and says
 // whether there's more; callers repeat until done.
 //   POST ?team=T                         a coach, from the Team tab (or scripts/sync.js for a first backfill)
-//   GET  (x-cron-key: CRON_SECRET)       the nightly job: every team, then the notes that are due
+//   GET  (x-cron-key: CRON_SECRET)       the nightly job: every team's games, connected TrackMan FTPs, then the notes that are due
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   if (!hasDatabase()) return res.status(503).json({ error: "no_database" });
@@ -30,6 +31,13 @@ export default async function handler(req, res) {
       for (const team of teams) {
         const r = await syncTeam(team, budget - (Date.now() - t0));
         if (!r.done) return res.json({ done: false, team: team.id, step: "games" });
+      }
+      // TrackMan files from each connected team's FTP
+      for (const integ of await query(`SELECT * FROM integrations WHERE source = 'trackman_ftp' AND enabled AND secret IS NOT NULL ORDER BY team_id`)) {
+        const team = teams.find((t) => t.id === integ.team_id) || (await query(`SELECT * FROM teams WHERE id = $1`, [integ.team_id]))[0];
+        if (!team || budget - (Date.now() - t0) < 15000) return res.json({ done: false, step: "trackman" });
+        const r = await runPull(team, integ, budget - (Date.now() - t0) - 5000);
+        if (!r.done) return res.json({ done: false, team: team.id, step: "trackman" });
       }
       // notes: postgame for games in the last two days, opponent for games in the next six, season when it changed
       const T = today(), soon = new Date(Date.parse(T) + 6 * 864e5).toISOString().slice(0, 10), recent = new Date(Date.parse(T) - 2 * 864e5).toISOString().slice(0, 10);
