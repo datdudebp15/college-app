@@ -3,136 +3,257 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1B1C1F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#EEF1F6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D0F14" media="(prefers-color-scheme: dark)">
 <title>Offseason College</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&family=Instrument+Serif:ital@0;1&family=Instrument+Sans:ital,wght@1,400;1,500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
 <style>
-/* Design tokens: the same system as Offseason (navy + gold, Instrument Serif titles, Geist UI, matte charcoal dark mode). */
+/* College's own look: Plus Jakarta Sans, cobalt + ember, floating glass chrome over a soft color field.
+   Glass is only for the navigation layer (top buttons, tab bar, sheets); content sits on solid cards. */
 :root{
-  --bg:#F2F2F7; --surface:#FFFFFF; --surface-2:#F2F2F7; --fill:rgba(118,118,128,.12); --fill-2:rgba(118,118,128,.08);
-  --ink:#000000; --muted:#8A8A8E; --line:rgba(60,60,67,.14);
-  --accent:#1F3A68; --accent-soft:rgba(31,58,104,.09); --on-accent:#FFFFFF; --gold:#B8892B; --seam:#FF3B30;
-  --st-good:#34C759; --st-good-soft:rgba(52,199,89,.12); --st-warn:#FF9500; --st-warn-soft:rgba(255,149,0,.12); --st-bad:#FF3B30; --st-bad-soft:rgba(255,59,48,.10);
-  --sel:#FFFFFF; --bar:rgba(249,249,249,.82);
-  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .035 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  --body:"Geist",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
-  --serif:"Instrument Serif","Iowan Old Style","Palatino Linotype",Georgia,serif;
-  --sub:"Instrument Sans","Geist",-apple-system,"Segoe UI",system-ui,sans-serif;
-  --mono:"Geist Mono",ui-monospace,Menlo,Consolas,monospace;
-  --ease:cubic-bezier(.2,.8,.2,1); --spring:cubic-bezier(.3,1.5,.5,1);
+  --bg:#EEF1F6; --card:#FFFFFF; --card-2:#F3F5F9; --fill:rgba(120,128,150,.13); --fill-2:rgba(120,128,150,.08);
+  --ink:#0B0D12; --ink-2:#3B4150; --muted:#7C8394; --line:rgba(20,30,60,.09);
+  --accent:#2F5BFF; --accent-ink:#FFFFFF; --accent-soft:rgba(47,91,255,.10); --ember:#FF6B3D;
+  --good:#1FB866; --good-soft:rgba(31,184,102,.12); --warn:#F59E0B; --bad:#EF4444; --bad-soft:rgba(239,68,68,.10);
+  --glass:rgba(255,255,255,.55); --glass-hi:rgba(255,255,255,.95); --glass-edge:rgba(255,255,255,.7); --glass-shadow:0 12px 34px rgba(20,30,60,.16),0 2px 6px rgba(20,30,60,.06);
+  --lens:rgba(255,255,255,.85); --orb1:#7AA2FF; --orb2:#FFB08A; --orb3:#9EE6FF; --orb-o:.55;
+  --font:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  /* Spring curves: replaced at load by real spring simulations (linear()), these are the fallbacks. */
+  --spring:cubic-bezier(.34,1.4,.5,1); --spring-d:560ms; --settle:cubic-bezier(.2,.9,.25,1); --settle-d:420ms;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
-  --bg:#1B1C1F; --surface:#25262A; --surface-2:#303136; --fill:rgba(118,118,128,.24); --fill-2:rgba(118,118,128,.16);
-  --ink:#FFFFFF; --muted:#98989F; --line:rgba(84,84,88,.55);
-  --accent:#E4BC5C; --accent-soft:rgba(228,188,92,.15); --on-accent:#14110A; --gold:#E4BC5C; --seam:#FF453A;
-  --st-good:#30D158; --st-good-soft:rgba(48,209,88,.16); --st-warn:#FF9F0A; --st-warn-soft:rgba(255,159,10,.16); --st-bad:#FF453A; --st-bad-soft:rgba(255,69,58,.16);
-  --sel:#636366; --bar:rgba(30,31,34,.82);
-  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --bg:#0D0F14; --card:#171A21; --card-2:#1F232C; --fill:rgba(140,150,175,.16); --fill-2:rgba(140,150,175,.09);
+  --ink:#F4F6FB; --ink-2:#C2C8D6; --muted:#8890A3; --line:rgba(255,255,255,.07);
+  --accent:#6B8CFF; --accent-ink:#0B0D12; --accent-soft:rgba(107,140,255,.16); --ember:#FF8A5C;
+  --good:#34D399; --good-soft:rgba(52,211,153,.14); --bad:#F87171; --bad-soft:rgba(248,113,113,.14);
+  --glass:rgba(38,42,54,.5); --glass-hi:rgba(255,255,255,.22); --glass-edge:rgba(255,255,255,.14); --glass-shadow:0 14px 38px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.3);
+  --lens:rgba(255,255,255,.14); --orb1:#2C4BD6; --orb2:#B8461F; --orb3:#0E7490; --orb-o:.42;
   color-scheme:dark;
 }}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{background:var(--bg) var(--grain) repeat;color:var(--ink);font:17px/1.41 var(--body);letter-spacing:-.01em;margin:0;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;min-height:100vh}
-button,input,select{font:inherit;color:inherit}
-button{cursor:pointer}
-.muted{color:var(--muted)} .small{font-size:13px}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 16px/1.45 var(--font);letter-spacing:-.011em;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;min-height:100vh;overflow-x:hidden}
+button,input,select{font:inherit;color:inherit;letter-spacing:inherit}
+button{cursor:pointer;-webkit-user-select:none;user-select:none}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-@keyframes pop{0%{transform:scale(.96);opacity:0}100%{transform:none;opacity:1}}
+.muted{color:var(--muted)} .small{font-size:13px}
 
-/* sign-in */
-.welcome{min-height:86vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:48px 24px;max-width:560px;margin:0 auto}
-.welcome>*{animation:rise .8s var(--ease) both}
-.welcome>*:nth-child(2){animation-delay:.12s}.welcome>*:nth-child(3){animation-delay:.22s}.welcome>*:nth-child(4){animation-delay:.32s}
-.welcome h1{font:400 clamp(52px,14vw,80px)/.95 var(--serif);letter-spacing:-.01em;margin:0}
-.dot{color:var(--gold)}
-.welcome .tag{font:italic 400 18px/1.35 var(--sub);color:var(--muted);max-width:30ch;margin:0}
-.signin{display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;margin-top:18px}
-.signin input{text-align:center;font:500 22px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase}
-.err{color:var(--st-bad);font-size:15px;margin:0}
+/* color field behind everything, so the glass has something to bend */
+#field{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#field i{position:absolute;border-radius:50%;filter:blur(70px);opacity:var(--orb-o);will-change:transform}
+#field i:nth-child(1){width:60vmax;height:60vmax;left:-20vmax;top:-25vmax;background:var(--orb1);animation:drift1 26s ease-in-out infinite alternate}
+#field i:nth-child(2){width:46vmax;height:46vmax;right:-18vmax;top:20vh;background:var(--orb2);animation:drift2 31s ease-in-out infinite alternate}
+#field i:nth-child(3){width:40vmax;height:40vmax;left:10vw;bottom:-22vmax;background:var(--orb3);animation:drift3 23s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate(12vmax,8vmax) scale(1.1)}}
+@keyframes drift2{to{transform:translate(-10vmax,-6vmax) scale(.92)}}
+@keyframes drift3{to{transform:translate(8vmax,-10vmax) scale(1.08)}}
 
-/* chrome */
-.top{position:sticky;top:0;z-index:5;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--line)}
-.top-in{max-width:760px;margin:0 auto;padding:0 16px;height:48px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
-.top .mid{text-align:center;font:600 17px/1 var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.top .back,.top .end{appearance:none;border:0;background:none;color:var(--accent);font-size:17px;padding:6px 0;display:flex;align-items:center;gap:4px}
-.top .back{justify-self:start} .top .end{justify-self:end}
-.top .back svg{width:11px;height:18px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
-main{max-width:760px;margin:0 auto;padding:8px 16px 64px;display:flex;flex-direction:column;gap:20px}
-main.enter>*{animation:rise .6s var(--ease) both;animation-delay:calc(var(--i,0) * 55ms)}
-.largetitle{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:10px 4px 0}
-.largetitle h1{font:400 44px/1 var(--serif);letter-spacing:-.01em;margin:0}
-.largetitle .sub{font:italic 400 15px/1.3 var(--sub);color:var(--muted);padding-bottom:6px;text-align:right}
-.banner{border-radius:14px;padding:12px 16px;font-size:15px;background:var(--accent-soft)}
-.banner.warn{background:var(--st-warn-soft)}
+/* ---------- liquid glass ---------- */
+.glass{position:relative;isolation:isolate;background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(190%);backdrop-filter:blur(22px) saturate(190%);
+  box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi),inset 0 -1px 0 rgba(255,255,255,.06),inset 0 0 0 1px var(--glass-edge)}
+/* specular rim + a highlight that follows the finger */
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
+  background:radial-gradient(120px 80px at var(--mx,30%) var(--my,0%),rgba(255,255,255,.45),transparent 70%),linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 45%);
+  opacity:.55;transition:opacity .3s}
+.glass:hover::before{opacity:.85}
+@media (prefers-color-scheme:dark){.glass::before{opacity:.25}.glass:hover::before{opacity:.45}}
 
-/* cards, buttons, fields */
-.card{background:var(--surface);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px}
-.card h3{font:400 28px/1.05 var(--serif);margin:0}
-.card h4{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.02em;margin:4px 0 0;color:var(--muted)}
-.card .hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.card .hd .muted{font:italic 400 14px var(--sub)}
-.btn{appearance:none;border:0;background:var(--accent);color:var(--on-accent);font:600 17px/1 var(--body);padding:15px 22px;border-radius:14px;min-height:50px;transition:transform .15s var(--ease),opacity .15s}
-.btn:active{transform:scale(.97);opacity:.85}
-.btn.ghost{background:var(--accent-soft);color:var(--accent)}
-.btn.danger{background:var(--st-bad-soft);color:var(--st-bad)}
-.btn.small{padding:8px 14px;min-height:36px;font-size:15px;border-radius:999px}
-.btn:disabled{opacity:.4;cursor:default}
+/* stage: everything under the sheet, so it can recede when a sheet opens */
+#stage{position:relative;z-index:1;min-height:100vh;transform-origin:50% 0;transition:transform var(--spring-d) var(--spring),border-radius var(--settle-d) var(--settle),filter var(--settle-d) var(--settle)}
+body.sheet-open #stage{transform:scale(.94) translateY(14px);border-radius:22px;overflow:hidden;filter:brightness(.82)}
+@media (min-width:760px){body.sheet-open #stage{transform:scale(.97);filter:brightness(.8)}}
+
+/* top bar: floating glass buttons, the title fades in once the large title scrolls away */
+#top{position:fixed;left:0;right:0;top:0;z-index:20;padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 0;pointer-events:none}
+#top .in{max-width:820px;margin:0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
+#top .in>*{pointer-events:auto}
+.gbtn{appearance:none;border:0;height:44px;min-width:44px;padding:0 16px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;gap:6px;color:var(--ink);font-weight:600;font-size:15px;
+  transition:transform var(--spring-d) var(--spring)}
+.gbtn:active{transform:scale(.9)}
+.gbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.gbtn.icon{padding:0;width:44px}
+#top .l{justify-self:start} #top .r{justify-self:end}
+#top .t{font-weight:700;font-size:16px;padding:0 16px;height:36px;border-radius:999px;display:flex;align-items:center;opacity:0;transform:translateY(-6px) scale(.96);transition:opacity .25s,transform var(--spring-d) var(--spring);white-space:nowrap;max-width:52vw;overflow:hidden;text-overflow:ellipsis}
+body.scrolled #top .t{opacity:1;transform:none}
+
+/* page */
+main{position:relative;max-width:820px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 70px) 16px calc(env(safe-area-inset-bottom,0px) + 120px);display:flex;flex-direction:column;gap:16px}
+.lt{margin:6px 4px 4px}
+.lt h1{font-size:clamp(34px,8.5vw,44px);line-height:1.02;font-weight:800;letter-spacing:-.04em;margin:0}
+.lt p{margin:6px 0 0;color:var(--muted);font-weight:500;font-size:15px}
+.enter>*{animation:enter var(--spring-d) var(--spring) both;animation-delay:calc(var(--i,0) * 40ms)}
+@keyframes enter{from{opacity:0;transform:translateY(22px) scale(.98)}to{opacity:1;transform:none}}
+.from-r>*{animation-name:fromR} .from-l>*{animation-name:fromL}
+@keyframes fromR{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
+@keyframes fromL{from{opacity:0;transform:translateX(-36px)}to{opacity:1;transform:none}}
+
+.card{background:var(--card);border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(20,30,60,.04),0 0 0 1px var(--line)}
+.card h3{font-size:19px;font-weight:700;letter-spacing:-.025em;margin:0}
+.card .hd{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.note{border-radius:18px;padding:12px 16px;font-size:14px;font-weight:600;color:var(--accent);background:var(--accent-soft)}
+.btn{appearance:none;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:16px;padding:0 22px;min-height:52px;border-radius:999px;
+  transition:transform var(--spring-d) var(--spring),filter .2s;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 35%,transparent)}
+.btn:hover{filter:brightness(1.06)} .btn:active{transform:scale(.95)}
+.btn.soft{background:var(--accent-soft);color:var(--accent);box-shadow:none}
+.btn.danger{background:var(--bad-soft);color:var(--bad);box-shadow:none}
+.btn.sm{min-height:40px;font-size:15px;padding:0 18px}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.45}
 .actions{display:flex;gap:10px;flex-wrap:wrap}
-.linkbtn{appearance:none;background:none;border:0;color:var(--accent);font:500 15px var(--body);padding:4px 0}
+.link{appearance:none;border:0;background:none;color:var(--accent);font-weight:700;font-size:15px;padding:6px 2px}
+.link.bad{color:var(--bad)}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .grid .full{grid-column:1/-1}
-@media (min-width:560px){.grid.g4{grid-template-columns:repeat(4,minmax(0,1fr))}}
-label.f{display:flex;flex-direction:column;gap:6px;font:500 14px/1.2 var(--body);color:var(--muted);min-width:0}
-input[type=text],input[type=number],select{width:100%;padding:11px 12px;border:0;border-radius:10px;background:var(--fill-2);min-height:44px;font-size:17px;color:var(--ink)}
-input:focus,select:focus{outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
-.seg{display:flex;gap:2px;background:var(--fill);border-radius:10px;padding:2px}
-.seg button{flex:1 1 0;min-height:34px;border:0;background:transparent;border-radius:8px;font:500 15px/1 var(--body);transition:background .2s,box-shadow .2s}
-.seg button[aria-pressed="true"]{background:var(--sel);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12),0 0 0 .5px rgba(0,0,0,.04)}
+label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:13px;color:var(--muted);min-width:0}
+input[type=text],input[type=number],select{width:100%;padding:0 14px;border:0;border-radius:14px;background:var(--fill-2);min-height:48px;font-size:17px;font-weight:600;color:var(--ink);transition:box-shadow .2s}
+input:focus,select:focus{outline:none;box-shadow:0 0 0 3px var(--accent-soft),inset 0 0 0 1.5px var(--accent)}
 
-/* roster */
-.list{background:var(--surface);border-radius:16px;overflow:hidden}
-.row{appearance:none;width:100%;border:0;background:none;display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:12px;padding:12px 16px;text-align:left;position:relative}
-.row+.row::before{content:"";position:absolute;top:0;left:72px;right:0;border-top:.5px solid var(--line)}
-.row:active{background:var(--fill-2)}
-.num{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font:600 17px/1 var(--body);font-variant-numeric:tabular-nums}
-.row b{display:block;font-weight:600}
-.row .meta{font-size:14px;color:var(--muted)}
-.chip{font:500 12px/1 var(--body);padding:6px 9px;border-radius:999px;white-space:nowrap;background:var(--fill);color:var(--muted)}
-.chip.active{background:var(--st-good-soft);color:var(--st-good)}
-.chip.invited{background:var(--accent-soft);color:var(--accent)}
-.empty{text-align:center;padding:28px 16px;color:var(--muted)}
-.kv{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-@media (min-width:560px){.kv{grid-template-columns:repeat(4,1fr)}}
-.kv div{background:var(--surface-2);border-radius:14px;padding:14px}
-.kv b{display:block;font:600 26px/1.05 var(--body);letter-spacing:-.035em}
-.kv span{font-size:13px;color:var(--muted)}
+/* lists */
+.list{background:var(--card);border-radius:24px;overflow:hidden;box-shadow:0 1px 2px rgba(20,30,60,.04),0 0 0 1px var(--line)}
+.row{appearance:none;width:100%;border:0;background:none;display:grid;grid-template-columns:46px 1fr auto;align-items:center;gap:14px;padding:12px 16px;text-align:left;position:relative;
+  transition:background .2s,transform var(--spring-d) var(--spring)}
+.row+.row::before{content:"";position:absolute;top:0;left:76px;right:16px;border-top:1px solid var(--line)}
+button.row:hover{background:var(--fill-2)} button.row:active{transform:scale(.985);background:var(--fill)}
+.num{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;font-weight:800;font-size:17px;font-variant-numeric:tabular-nums;color:var(--accent);background:var(--accent-soft)}
+.row b{display:block;font-weight:700;letter-spacing:-.02em}
+.row .meta{font-size:13.5px;color:var(--muted);font-weight:500}
+.chip{font-size:12px;font-weight:700;padding:6px 10px;border-radius:999px;white-space:nowrap;background:var(--fill);color:var(--muted)}
+.chip.active{background:var(--good-soft);color:var(--good)} .chip.invited{background:var(--accent-soft);color:var(--accent)}
+.empty{text-align:center;padding:32px 16px;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (min-width:560px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stats div{background:var(--card-2);border-radius:18px;padding:14px 16px}
+.stats b{display:block;font-size:24px;font-weight:800;letter-spacing:-.04em;line-height:1.1}
+.stats span{font-size:12.5px;color:var(--muted);font-weight:600}
+
+/* floating tab bar with a liquid lens you can drag */
+#tabs{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:20;transform:translateX(-50%);border-radius:999px;padding:5px;display:flex;gap:2px;
+  touch-action:none;transition:transform var(--spring-d) var(--spring),opacity .3s,padding var(--settle-d) var(--settle)}
+#tabs[hidden]{display:none}
+#tabs.away{transform:translate(-50%,140%);opacity:0}
+#tabs .lens{position:absolute;top:5px;bottom:5px;left:0;width:0;border-radius:999px;background:var(--lens);z-index:0;pointer-events:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 0 0 1px rgba(255,255,255,.35),0 4px 14px rgba(20,30,60,.12);
+  transition:transform var(--spring-d) var(--spring),width var(--spring-d) var(--spring),scale var(--spring-d) var(--spring)}
+#tabs.dragging .lens{transition:width var(--spring-d) var(--spring),scale var(--spring-d) var(--spring);scale:1.12 1.18;background:rgba(255,255,255,.35);-webkit-backdrop-filter:blur(2px) saturate(220%);backdrop-filter:blur(2px) saturate(220%)}
+#tabs .lens.stretch{scale:1.18 .9}
+#tabs button{appearance:none;border:0;background:none;position:relative;z-index:1;min-width:76px;height:54px;padding:0 14px;border-radius:999px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  color:var(--ink-2);font-size:11px;font-weight:700;transition:color .25s,min-width var(--settle-d) var(--settle),height var(--settle-d) var(--settle)}
+#tabs button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:transform var(--spring-d) var(--spring)}
+#tabs button[aria-current="page"]{color:var(--accent)}
+#tabs button:active svg{transform:scale(.82)}
+/* shrinks while scrolling down, like iOS */
+#tabs.mini{padding:4px}
+#tabs.mini button{height:42px;min-width:54px}
+#tabs.mini button span{display:none}
+#tabs.mini .lens{top:4px;bottom:4px}
+
+/* sheets */
+#scrim{position:fixed;inset:0;z-index:30;background:rgba(5,8,15,.28);opacity:0;pointer-events:none;transition:opacity var(--settle-d) var(--settle)}
+body.sheet-open #scrim{opacity:1;pointer-events:auto}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;margin:0 auto;max-width:640px;max-height:calc(100vh - 56px);border-radius:30px 30px 0 0;
+  display:flex;flex-direction:column;transform:translateY(105%);transition:transform var(--spring-d) var(--spring);will-change:transform}
+#sheet.glass{background:color-mix(in srgb,var(--card) 82%,transparent)}
+body.sheet-open #sheet{transform:translateY(0)}
+#sheet.drag{transition:none}
+@media (min-width:760px){#sheet{bottom:auto;top:50%;border-radius:30px;transform:translateY(-40%) scale(.92);opacity:0;transition:transform var(--spring-d) var(--spring),opacity .25s;max-height:86vh}
+  body.sheet-open #sheet{transform:translateY(-50%);opacity:1}}
+#sheet .grab{flex:none;height:28px;display:grid;place-items:center;cursor:grab;touch-action:none}
+#sheet .grab i{width:40px;height:5px;border-radius:3px;background:var(--fill);display:block}
+@media (min-width:760px){#sheet .grab{height:14px}#sheet .grab i{display:none}}
+#sheet .sh{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 18px 8px 22px;touch-action:none}
+#sheet .sh h2{font-size:24px;font-weight:800;letter-spacing:-.035em;margin:0;line-height:1.1}
+#sheet .sb{overflow-y:auto;padding:8px 18px calc(env(safe-area-inset-bottom,0px) + 22px);display:flex;flex-direction:column;gap:14px;overscroll-behavior:contain}
+#sheet .sb .card{box-shadow:0 0 0 1px var(--line)}
+.swap{animation:swap var(--spring-d) var(--spring) both}
+@keyframes swap{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
 
 /* one-time code */
-.code{animation:pop .35s var(--spring) both;border:1.5px solid var(--accent)}
-.code .val{font:500 clamp(30px,9vw,40px)/1 var(--mono);letter-spacing:.06em;text-align:center;padding:14px 0;user-select:all}
-.teams{display:flex;flex-direction:column;gap:10px}
-.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:15px;z-index:10;animation:pop .3s var(--spring) both}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.code{font:600 clamp(30px,9vw,40px)/1 var(--mono);letter-spacing:.06em;text-align:center;padding:22px 0;border-radius:20px;background:var(--card-2);user-select:all;animation:codeIn .7s var(--spring) both}
+@keyframes codeIn{from{opacity:0;letter-spacing:.4em;filter:blur(6px)}to{opacity:1;letter-spacing:.06em;filter:none}}
+
+/* sign-in */
+.welcome{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 22px}
+.welcome .mark{width:76px;height:76px;border-radius:24px;display:grid;place-items:center;margin-bottom:22px}
+.welcome .mark svg{width:42px;height:42px}
+.welcome h1{font-size:clamp(40px,11vw,60px);font-weight:800;letter-spacing:-.05em;line-height:1;margin:0}
+.welcome h1 em{font-style:normal;color:var(--accent)}
+.welcome p.tag{color:var(--ink-2);font-size:17px;max-width:30ch;margin:14px 0 0}
+.signin{width:100%;max-width:360px;margin-top:30px;border-radius:30px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.signin input{text-align:center;font:600 22px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;background:rgba(255,255,255,.35);min-height:56px;border-radius:22px}
+@media (prefers-color-scheme:dark){.signin input{background:rgba(0,0,0,.25)}}
+.signin .btn{min-height:56px;border-radius:22px}
+.welcome .err{color:var(--bad);font-weight:600;margin:14px 0 0}
+.welcome>*{animation:enter .9s var(--spring) both}
+.welcome>*:nth-child(2){animation-delay:.08s}.welcome>*:nth-child(3){animation-delay:.16s}.welcome>*:nth-child(4){animation-delay:.24s}.welcome>*:nth-child(5){animation-delay:.32s}
+.shake{animation:shake .5s var(--settle)}
+@keyframes shake{20%{transform:translateX(-10px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+
+#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:50;transform:translate(-50%,-160%);padding:12px 20px;border-radius:999px;font-weight:700;font-size:15px;
+  transition:transform var(--spring-d) var(--spring);pointer-events:none}
+#toast.on{transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}#field i{animation:none}}
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="field" aria-hidden="true"><i></i><i></i><i></i></div>
+<div id="stage">
+  <header id="top" hidden><div class="in"><span class="l"></span><span class="t glass"></span><span class="r"></span></div></header>
+  <main id="page"></main>
+</div>
+<nav id="tabs" class="glass" aria-label="Sections" hidden></nav>
+<div id="scrim"></div>
+<section id="sheet" class="glass" role="dialog" aria-modal="true" aria-labelledby="sheet-title" hidden><div class="grab" aria-hidden="true"><i></i></div><div class="sh"></div><div class="sb"></div></section>
+<div id="toast" class="glass" role="status"></div>
 <script>
 const APP_NAME = "Offseason College"; // working name; change here
-const APP = document.getElementById("app");
-const S = { view: "boot", seg: "roster" };
+const $ = (s, el = document) => el.querySelector(s);
+const PAGE = $("#page"), TOP = $("#top"), TABS = $("#tabs"), SHEET = $("#sheet");
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const S = { view: "boot", tab: null, sheet: null };
 const ls = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} } };
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const BACK = '<svg viewBox="0 0 12 20" aria-hidden="true"><path d="M10 2L2 10l8 8"/></svg>';
 const POS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "OF", "IF", "UT", "DH", "P"];
 const CLASS = ["Fr", "So", "Jr", "Sr", "Gr", "RS Fr", "RS So", "RS Jr", "RS Sr"];
-const ERR = { name: "First and last name are needed.", last_coach: "A team needs at least one coach.", coach_only: "Only coaches can do that.", no_database: "The database isn't connected yet.", server: "Something went wrong. Try again." };
+const ERR = { name: "First and last name are needed.", last_coach: "A team needs at least one coach.", coach_only: "Only coaches can do that.", season: "Season should be a year, like 2026.", missing: "Fill in the team, season and head coach.", no_database: "The database isn't connected yet.", server: "Something went wrong. Try again." };
+const I = {
+  back: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
+  x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  roster: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.5"/><path d="M15.8 14.2c2.3.2 4 1.8 4.6 4.8"/></svg>',
+  staff: '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 4.5V3.5h6v1M9 10h6M9 14h6M9 18h3"/></svg>',
+  team: '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.3-3 7.7-7 9.5-4-1.8-7-5.2-7-9.5V6z"/><path d="M9 12l2 2 4-4"/></svg>',
+  me: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.8 3.6-6 7-6s6.2 2.2 7 6"/></svg>',
+  account: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M4.2 7.5l2.1 1.2M17.7 15.3l2.1 1.2M4.2 16.5l2.1-1.2M17.7 8.7l2.1-1.2"/></svg>',
+  ball: '<svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="2.6"/><path d="M14 9.5c4.6 3.8 7 8.8 7 14.5s-2.4 10.7-7 14.5M34 9.5c-4.6 3.8-7 8.8-7 14.5s2.4 10.7 7 14.5" stroke="var(--ember)" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="1 4.2"/></svg>',
+};
 
+/* ---------- motion: real spring curves, written into CSS as linear() easings ---------- */
+function spring(stiffness, damping) {
+  const dt = 1 / 120, pts = []; let x = 0, v = 0;
+  for (let i = 0; i < 480; i++) { const a = -stiffness * (x - 1) - damping * v; v += a * dt; x += v * dt; pts.push(x); if (i > 20 && Math.abs(x - 1) < 0.0008 && Math.abs(v) < 0.01) break; }
+  const step = Math.max(1, Math.round(pts.length / 60));
+  const s = pts.filter((_, i) => i % step === 0 || i === pts.length - 1).map((p) => +p.toFixed(4));
+  s[s.length - 1] = 1;
+  return { ease: `linear(0, ${s.join(", ")})`, ms: Math.round(pts.length * dt * 1000) };
+}
+if (CSS.supports("transition-timing-function", "linear(0, 1)")) {
+  const b = spring(240, 20), d = spring(260, 32), r = document.documentElement.style;
+  r.setProperty("--spring", b.ease); r.setProperty("--spring-d", b.ms + "ms");
+  r.setProperty("--settle", d.ease); r.setProperty("--settle-d", d.ms + "ms");
+}
+// the highlight inside glass follows the pointer
+document.addEventListener("pointermove", (e) => {
+  const g = e.target.closest && e.target.closest(".glass"); if (!g) return;
+  const r = g.getBoundingClientRect(); g.style.setProperty("--mx", ((e.clientX - r.left) / r.width * 100) + "%"); g.style.setProperty("--my", ((e.clientY - r.top) / r.height * 100) + "%");
+}, { passive: true });
+const haptic = () => { try { navigator.vibrate && navigator.vibrate(8); } catch {} };
+
+/* ---------- api ---------- */
 async function api(name, { method = "GET", query = {}, body } = {}) {
   const qs = new URLSearchParams(query).toString();
   let r;
@@ -143,187 +264,307 @@ async function api(name, { method = "GET", query = {}, body } = {}) {
   if (!r.ok) throw { code: j.error || "server" };
   return j;
 }
-function toast(t) { document.querySelectorAll(".toast").forEach((x) => x.remove()); const d = document.createElement("div"); d.className = "toast"; d.setAttribute("role", "status"); d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2400); }
-function fail(e) { toast(ERR[e && e.code] || (e && e.code === "offline" ? "You're offline." : "Something went wrong.")); }
+let toastT;
+function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("on"), 2200); }
+const fail = (e) => toast(ERR[e && e.code] || (e && e.code === "offline" ? "You're offline." : "Something went wrong."));
 
 /* ---------- flow ---------- */
 async function boot() {
   S.token = ls.get("oc-token");
-  if (!S.token) { S.view = "signin"; return render(); }
+  if (!S.token) return showSignin();
   try { S.me = await api("me"); } catch { return; }
   const last = ls.get("oc-team");
   const pick = S.me.teams.find((t) => t.id === last) || (S.me.teams.length === 1 && !S.me.user.admin ? S.me.teams[0] : null);
-  if (pick) openTeam(pick.id); else { S.view = "teams"; S.anim = true; render(); }
+  if (pick) openTeam(pick.id); else showTeams();
 }
-function signOut(msg) { ls.set("oc-token", null); ls.set("oc-team", null); Object.assign(S, { token: null, me: null, team: null, view: "signin", signinErr: msg || "" }); render(); }
+function signOut(msg) { ls.set("oc-token", null); ls.set("oc-team", null); closeSheet(true); Object.assign(S, { token: null, me: null, team: null, signinErr: msg || "" }); showSignin(); }
 async function openTeam(id) {
-  try { S.team = await api("team", { query: { id } }); } catch (e) { if (e.code === "not_found") { ls.set("oc-team", null); S.view = "teams"; render(); } return; }
-  ls.set("oc-team", id); Object.assign(S, { view: "team", sel: null, adding: false, reveal: null, seg: "roster", anim: true }); render(); scrollTo(0, 0);
+  try { S.team = await api("team", { query: { id } }); }
+  catch (e) { if (e.code === "not_found") { ls.set("oc-team", null); showTeams(); } return; }
+  ls.set("oc-team", id); S.view = "team";
+  S.tab = coach() ? (ls.get("oc-tab-c") || "roster") : (ls.get("oc-tab-p") || "me");
+  if (!tabList().some((t) => t[0] === S.tab)) S.tab = tabList()[0][0];
+  buildTabs(); renderPage("enter");
 }
 async function reloadTeam() { S.team = await api("team", { query: { id: S.team.team.id } }); }
 const coach = () => S.team && S.team.me.role === "coach";
 const playerById = (id) => S.team.players.find((p) => p.id === id);
 const fullName = (p) => `${p.first} ${p.last}`;
+const manyTeams = () => S.me && (S.me.teams.length > 1 || S.me.user.admin);
 
-/* ---------- render ---------- */
-function render() {
-  if (S.view === "boot") { APP.innerHTML = ""; return; }
-  if (S.view === "signin") return renderSignin();
-  if (S.view === "teams") return renderTeams();
-  return renderTeam();
-}
-function chrome(left, mid, right, body) {
-  APP.innerHTML = `<header class="top"><div class="top-in">${left || "<span></span>"}<span class="mid">${esc(mid)}</span>${right || "<span></span>"}</div></header><main${S.anim ? ' class="enter"' : ""}>${body}</main>`;
-  if (S.anim) [...APP.querySelector("main").children].forEach((c, i) => c.style.setProperty("--i", Math.min(i, 8)));
-  S.anim = false;
-}
-function renderSignin() {
-  APP.innerHTML = `<section class="welcome"><h1>${esc(APP_NAME)}<span class="dot">.</span></h1>
-    <p class="tag">Every at-bat graded. Every hitter's plan, ready before practice.</p>
-    <form class="signin" id="signin" novalidate><label for="code" class="sr">Access code</label>
+/* ---------- screens ---------- */
+function showSignin() {
+  S.view = "signin"; TOP.hidden = true; TABS.hidden = true; document.body.classList.remove("scrolled");
+  PAGE.className = ""; PAGE.style.padding = "0";
+  PAGE.innerHTML = `<section class="welcome"><div class="mark glass">${I.ball}</div>
+    <h1>${esc(APP_NAME.replace(/ (\S+)$/, ""))} <em>${esc(APP_NAME.split(" ").pop())}</em></h1>
+    <p class="tag">Every at-bat graded. Every hitter's plan ready before practice.</p>
+    <form class="signin glass" id="signin" novalidate><label for="code" class="sr">Access code</label>
       <input id="code" type="text" autocomplete="one-time-code" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="XXXXX-XXXXX" maxlength="16">
       <button class="btn" type="submit">Sign in</button></form>
-    ${S.signinErr ? `<p class="err" role="alert">${esc(S.signinErr)}</p>` : `<p class="muted small" style="margin:0">Your coach gives you the code.</p>`}</section>`;
+    ${S.signinErr ? `<p class="err" role="alert">${esc(S.signinErr)}</p>` : `<p class="muted small" style="margin:16px 0 0">Your coach gives you the code.</p>`}</section>`;
 }
-function renderTeams() {
-  const T = S.me.teams, admin = S.me.user.admin;
-  const list = T.length ? `<div class="list">${T.map((t) => `<button class="row" data-act="team" data-id="${esc(t.id)}"><span class="num">${esc((t.shortName || t.name)[0])}</span><span><b>${esc(t.name)}</b><span class="meta">${esc(t.season)} season${t.demo ? " · demo" : ""}</span></span><span class="chip">${t.role === "coach" ? "Coach" : "Player"}</span></button>`).join("")}</div>`
-    : `<section class="card"><p class="muted" style="margin:0">You're not on a team yet.</p></section>`;
-  const make = admin ? (S.newTeam ? `<section class="card"><div class="hd"><h3>New team</h3></div>
-      <div class="grid"><label class="f full">School and team name<input type="text" id="nt-name" placeholder="e.g. Ridgeline State Owls"></label>
-      <label class="f">Short name<input type="text" id="nt-short" placeholder="Ridgeline St."></label>
-      <label class="f">Season<input type="number" id="nt-season" value="${new Date().getFullYear()}"></label>
-      <label class="f full">Head coach's name<input type="text" id="nt-coach"></label></div>
-      <div class="actions"><button class="btn" data-act="nt-save">Create team</button><button class="btn ghost" data-act="nt-cancel">Cancel</button></div></section>`
-    : `<button class="btn ghost" data-act="nt-open">New team</button>`) : "";
-  chrome("", "", `<button class="end" data-act="signout">Sign out</button>`,
-    `<div class="largetitle"><h1>Teams</h1><span class="sub">${esc(S.me.user.name)}</span></div>${revealCard()}${list}${make}`);
+function topBar(left, title, right) {
+  TOP.hidden = false; PAGE.style.padding = "";
+  $(".l", TOP).innerHTML = left || ""; $(".t", TOP).textContent = title || ""; $(".t", TOP).style.visibility = title ? "" : "hidden"; $(".r", TOP).innerHTML = right || "";
 }
-function renderTeam() {
-  const { team } = S.team;
-  const many = S.me.teams.length > 1 || S.me.user.admin;
-  const left = S.sel ? `<button class="back" data-act="close">${BACK}Roster</button>` : many ? `<button class="back" data-act="teams">${BACK}Teams</button>` : "";
-  const right = `<button class="end" data-act="signout">Sign out</button>`;
-  const demo = team.demo ? `<div class="banner">Demo team. Every player and coach here is fictional.</div>` : "";
-  if (!coach()) return chrome(left, team.shortName || team.name, right, demo + playerHome());
-  if (S.sel) return chrome(left, team.shortName || team.name, right, playerCard(playerById(S.sel)));
-  const seg = `<div class="seg" role="group" aria-label="Section">${[["roster", "Roster"], ["staff", "Staff"]].map(([k, l]) => `<button data-act="seg" data-v="${k}" aria-pressed="${S.seg === k}">${l}</button>`).join("")}</div>`;
-  const n = S.team.players.length, signed = S.team.players.filter((p) => p.access !== "none").length;
-  const title = `<div class="largetitle"><h1>${S.seg === "staff" ? "Staff" : "Roster"}</h1><span class="sub">${esc(team.name)} · ${esc(team.season)}${S.seg === "roster" ? `<br>${n} players · ${signed} with sign-in` : ""}</span></div>`;
-  chrome(left, team.shortName || team.name, right, title + demo + seg + revealCard() + (S.seg === "staff" ? staffView() : rosterView()));
+function showTeams() {
+  S.view = "teams"; S.team = null; TABS.hidden = true;
+  topBar("", "Teams", `<button class="gbtn glass" data-act="signout">Sign out</button>`);
+  const T = S.me.teams;
+  setPage(`<div class="lt"><h1>Teams</h1><p>${esc(S.me.user.name)}</p></div>
+    ${T.length ? `<div class="list">${T.map((t) => `<button class="row" data-act="team" data-id="${esc(t.id)}"><span class="num">${esc((t.shortName || t.name)[0])}</span><span><b>${esc(t.name)}</b><span class="meta">${esc(t.season)} season${t.demo ? " · demo" : ""}</span></span><span class="chip">${t.role === "coach" ? "Coach" : "Player"}</span></button>`).join("")}</div>`
+      : `<div class="card"><p class="muted" style="margin:0">You're not on a team yet.</p></div>`}
+    ${S.me.user.admin ? `<button class="btn soft" data-act="sheet" data-s="newteam">New team</button>` : ""}`, "enter");
 }
-function revealCard() {
-  const r = S.reveal; if (!r) return "";
-  return `<section class="card code" aria-live="polite"><div class="hd"><h3>${esc(r.title)}</h3><button class="linkbtn" data-act="reveal-done">Done</button></div>
-    <div class="val">${esc(r.code)}</div>
-    <div class="actions"><button class="btn small" data-act="copy">Copy code</button></div>
-    <p class="small muted" style="margin:0">${esc(r.note)} This is the only time it's shown. If it gets lost, make a new one and the old one stops working.</p></section>`;
+function tabList() {
+  return coach() ? [["roster", "Roster", I.roster], ["staff", "Staff", I.staff], ["team", "Team", I.team]] : [["me", "Me", I.me], ["account", "Account", I.account]];
 }
-function rosterView() {
-  const P = S.team.players;
-  const rows = P.length ? `<div class="list">${P.map((p) => `<button class="row" data-act="open" data-id="${esc(p.id)}"><span class="num">${esc(p.jersey ?? "–")}</span>
-      <span><b>${esc(fullName(p))}</b><span class="meta">${esc([p.pos, p.classYear, p.bats && p.throws ? `B/T ${p.bats}/${p.throws}` : ""].filter(Boolean).join(" · "))}</span></span>
-      <span class="chip ${p.access}">${p.access === "active" ? "Signed in" : p.access === "invited" ? "Code sent" : "No sign-in"}</span></button>`).join("")}</div>`
-    : `<div class="list"><p class="empty">No players yet. Add your hitters to get started.</p></div>`;
-  return (S.adding ? playerForm(null) : `<button class="btn ghost" data-act="add">Add a player</button>`) + rows;
+function renderPage(anim) {
+  const team = S.team.team, short = team.shortName || team.name;
+  const left = manyTeams() ? `<button class="gbtn glass icon" data-act="teams" aria-label="All teams">${I.back}</button>` : "";
+  const right = coach() && S.tab === "roster" ? `<button class="gbtn glass icon" data-act="sheet" data-s="add" aria-label="Add a player">${I.plus}</button>`
+    : coach() && S.tab === "staff" ? `<button class="gbtn glass icon" data-act="sheet" data-s="addcoach" aria-label="Add a coach">${I.plus}</button>` : "";
+  const titles = { roster: "Roster", staff: "Staff", team: "Team", me: S.team.players[0] ? S.team.players[0].first : "Me", account: "Account" };
+  topBar(left, `${titles[S.tab]} · ${short}`, right);
+  const demo = team.demo ? `<div class="note">Demo team. Every player and coach here is fictional.</div>` : "";
+  const body = { roster: rosterPage, staff: staffPage, team: teamPage, me: mePage, account: accountPage }[S.tab]();
+  setPage(demo ? body.replace(/^(<div class="lt">[\s\S]*?<\/div>)/, `$1${demo}`) : body, anim);
+}
+function setPage(html, anim) {
+  PAGE.className = anim && !REDUCED ? anim : "";
+  PAGE.innerHTML = html;
+  [...PAGE.children].forEach((c, i) => c.style.setProperty("--i", Math.min(i, 8)));
+  onScroll();
+}
+const lt = (title, sub) => `<div class="lt"><h1>${esc(title)}</h1>${sub ? `<p>${sub}</p>` : ""}</div>`;
+const accessChip = (a) => `<span class="chip ${a}">${a === "active" ? "Signed in" : a === "invited" ? "Code sent" : "No sign-in"}</span>`;
+
+function rosterPage() {
+  const P = S.team.players, signed = P.filter((p) => p.access !== "none").length, t = S.team.team;
+  return lt("Roster", `${esc(t.name)} · ${esc(t.season)} · ${P.length} players, ${signed} with sign-in`) +
+    (P.length ? `<div class="list">${P.map((p) => `<button class="row" data-act="sheet" data-s="player" data-id="${esc(p.id)}"><span class="num">${esc(p.jersey ?? "–")}</span>
+      <span><b>${esc(fullName(p))}</b><span class="meta">${esc([p.pos, p.classYear, p.bats && p.throws ? `B/T ${p.bats}/${p.throws}` : ""].filter(Boolean).join(" · "))}</span></span>${accessChip(p.access)}</button>`).join("")}</div>`
+      : `<div class="list"><p class="empty">No players yet.</p></div><button class="btn" data-act="sheet" data-s="add">Add your first player</button>`);
+}
+function staffPage() {
+  const st = S.team.staff;
+  return lt("Staff", "Coaches see every player and can manage the team.") +
+    `<div class="list">${st.map((s) => `<button class="row" data-act="sheet" data-s="coach" data-id="${esc(s.id)}"><span class="num">${esc(s.name.replace(/^coach\s+/i, "")[0])}</span>
+      <span><b>${esc(s.name)}${s.you ? ' <span class="muted" style="font-weight:600">· you</span>' : ""}</b><span class="meta">${s.access === "active" ? "Signed in" : "Code sent"}</span></span><span class="chip">Coach</span></button>`).join("")}</div>`;
+}
+function teamPage() {
+  const t = S.team.team;
+  return lt("Team", "") + `<section class="card"><div class="hd"><h3>${esc(t.name)}</h3><button class="link" data-act="sheet" data-s="editteam">Edit</button></div>
+      <div class="stats"><div><b>${esc(t.season)}</b><span>Season</span></div><div><b>${S.team.players.length}</b><span>Players</span></div>
+      <div><b>${S.team.staff.length}</b><span>Coaches</span></div><div><b>${S.team.players.filter((p) => p.access === "active").length}</b><span>Players signed in</span></div></div></section>` + accountCard();
+}
+function accountCard() {
+  return `<section class="card"><div class="hd"><h3>Signed in as ${esc(S.me.user.name)}</h3></div>
+    <div class="actions">${manyTeams() ? `<button class="btn soft sm" data-act="teams">Switch team</button>` : ""}<button class="btn danger sm" data-act="signout">Sign out</button></div></section>`;
+}
+function facts(p) {
+  const hand = { R: "Right", L: "Left", S: "Switch" };
+  return `<div class="stats"><div><b>${esc(p.jersey ?? "–")}</b><span>Number</span></div><div><b>${esc(p.pos || "–")}</b><span>Position</span></div>
+    <div><b>${esc(p.bats ? hand[p.bats] : "–")}</b><span>Bats</span></div><div><b>${esc(p.classYear || "–")}</b><span>Class</span></div></div>`;
+}
+function mePage() {
+  const p = S.team.players[0];
+  if (!p) return lt("Me", "") + `<div class="card"><p class="muted" style="margin:0">Your coach hasn't linked your player page yet.</p></div>`;
+  return lt(p.first, esc(S.team.team.name)) + `<section class="card"><h3>${esc(fullName(p))}</h3>${facts(p)}</section>
+    <section class="card"><h3>Your season and at-bats</h3><p class="muted" style="margin:0">Your last season, what you do well, what to work on, and a grade for every at-bat will show here once your coaches start charting.</p></section>`;
+}
+function accountPage() { return lt("Account", "") + accountCard(); }
+
+/* ---------- tab bar ---------- */
+function buildTabs() {
+  const L = tabList();
+  TABS.hidden = false; TABS.classList.remove("away", "mini");
+  TABS.innerHTML = `<span class="lens" aria-hidden="true"></span>` + L.map(([k, l, ic]) => `<button data-tab="${k}"${S.tab === k ? ' aria-current="page"' : ""}>${ic}<span>${l}</span></button>`).join("");
+  requestAnimationFrame(() => placeLens(false));
+}
+function placeLens(animate) {
+  const lens = $(".lens", TABS), b = $(`button[data-tab="${S.tab}"]`, TABS); if (!lens || !b) return;
+  if (!animate) lens.style.transition = "none";
+  lens.style.width = b.offsetWidth + "px"; lens.style.transform = `translateX(${b.offsetLeft}px)`;
+  if (!animate) { lens.offsetWidth; lens.style.transition = ""; }
+}
+function selectTab(k) {
+  if (k === S.tab) { scrollTo({ top: 0, behavior: REDUCED ? "auto" : "smooth" }); return; }
+  const L = tabList().map((t) => t[0]), dir = L.indexOf(k) > L.indexOf(S.tab) ? "from-r" : "from-l";
+  S.tab = k; ls.set(coach() ? "oc-tab-c" : "oc-tab-p", k); haptic();
+  TABS.querySelectorAll("button").forEach((b) => b.dataset.tab === k ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+  const lens = $(".lens", TABS); lens.classList.add("stretch"); setTimeout(() => lens.classList.remove("stretch"), 180);
+  placeLens(true); scrollTo(0, 0); renderPage(dir);
+}
+// drag the lens across the bar, like iOS: it lifts, follows the finger and drops on the nearest tab
+(() => {
+  let drag = null;
+  TABS.addEventListener("pointerdown", (e) => {
+    const lens = $(".lens", TABS); if (!lens) return;
+    drag = { x0: e.clientX, moved: false, id: e.pointerId };
+  });
+  TABS.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved && Math.abs(e.clientX - drag.x0) < 6) return;
+    if (!drag.moved) { drag.moved = true; TABS.setPointerCapture(e.pointerId); TABS.classList.add("dragging"); haptic(); }
+    const lens = $(".lens", TABS), r = TABS.getBoundingClientRect(), w = lens.offsetWidth;
+    const x = Math.max(5, Math.min(r.width - w - 5, e.clientX - r.left - w / 2));
+    lens.style.transform = `translateX(${x}px)`;
+    const over = [...TABS.querySelectorAll("button")].find((b) => { const br = b.getBoundingClientRect(); return e.clientX >= br.left && e.clientX <= br.right; });
+    TABS.querySelectorAll("button").forEach((b) => b.style.color = b === over ? "var(--accent)" : "");
+  });
+  const end = (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const moved = drag.moved; drag = null;
+    if (!moved) return;
+    TABS.classList.remove("dragging"); TABS.querySelectorAll("button").forEach((b) => b.style.color = "");
+    const btns = [...TABS.querySelectorAll("button")];
+    const near = btns.reduce((a, b) => { const c = (x) => { const r = x.getBoundingClientRect(); return Math.abs(e.clientX - (r.left + r.width / 2)); }; return c(b) < c(a) ? b : a; });
+    if (near.dataset.tab !== S.tab) selectTab(near.dataset.tab); else placeLens(true);
+    TABS.dataset.justDragged = "1"; setTimeout(() => delete TABS.dataset.justDragged, 50);
+  };
+  TABS.addEventListener("pointerup", end); TABS.addEventListener("pointercancel", end);
+})();
+
+/* scroll: title moves into the top bar, tab bar shrinks while scrolling down */
+let lastY = 0;
+function onScroll() {
+  const y = scrollY, h1 = $(".lt h1", PAGE);
+  document.body.classList.toggle("scrolled", !!h1 && h1.getBoundingClientRect().bottom < 64);
+  if (!TABS.hidden) { if (y > lastY + 4 && y > 60) TABS.classList.add("mini"); else if (y < lastY - 4 || y < 30) TABS.classList.remove("mini"); placeLensSoon(); }
+  lastY = y;
+}
+let lensRaf; function placeLensSoon() { cancelAnimationFrame(lensRaf); lensRaf = requestAnimationFrame(() => setTimeout(() => placeLens(true), 60)); }
+addEventListener("scroll", onScroll, { passive: true });
+addEventListener("resize", () => placeLens(false));
+
+/* ---------- sheets ---------- */
+function openSheet(kind, data) {
+  const was = S.sheet;
+  S.sheet = { kind, ...(data || {}) }; S.confirm = null;
+  renderSheet(!!was);
+  if (!was) { SHEET.hidden = false; SHEET.offsetWidth; document.body.classList.add("sheet-open"); document.body.style.overflow = "hidden"; haptic(); }
+  setTimeout(() => { const f = SHEET.querySelector("input"); if (f && kind !== "player" && innerWidth >= 760) f.focus(); }, 300);
+}
+function closeSheet(instant) {
+  if (!S.sheet) return;
+  S.sheet = null; document.body.classList.remove("sheet-open"); document.body.style.overflow = "";
+  SHEET.style.transform = "";
+  const done = () => { if (!S.sheet) SHEET.hidden = true; };
+  if (instant || REDUCED) done(); else setTimeout(done, 450);
+}
+function renderSheet(swap) {
+  const s = S.sheet; if (!s) return;
+  const [title, body] = SHEETS[s.kind](s);
+  $(".sh", SHEET).innerHTML = `<h2 id="sheet-title">${esc(title)}</h2><button class="gbtn glass icon" data-act="close" aria-label="Close">${I.x}</button>`;
+  const sb = $(".sb", SHEET); sb.innerHTML = body; sb.scrollTop = 0;
+  if (swap && !REDUCED) { sb.classList.remove("swap"); sb.offsetWidth; sb.classList.add("swap"); }
 }
 function playerForm(p) {
   const v = p || {};
-  const sel = (id, opts, cur, blank) => `<select id="${id}">${blank ? `<option value="">${blank}</option>` : ""}${opts.map((o) => { const [val, lab] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(val)}"${val === cur ? " selected" : ""}>${esc(lab)}</option>`; }).join("")}</select>`;
-  return `<section class="card"><div class="hd"><h3>${p ? "Edit player" : "New player"}</h3></div>
-    <div class="grid g4"><label class="f">First name<input type="text" id="pf-first" value="${esc(v.first)}" autocomplete="off"></label>
+  const sel = (id, opts, cur) => `<select id="${id}"><option value="">–</option>${opts.map((o) => { const [val, lab] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(val)}"${val === cur ? " selected" : ""}>${esc(lab)}</option>`; }).join("")}</select>`;
+  return `<div class="grid"><label class="f">First name<input type="text" id="pf-first" value="${esc(v.first)}" autocomplete="off"></label>
     <label class="f">Last name<input type="text" id="pf-last" value="${esc(v.last)}" autocomplete="off"></label>
     <label class="f">Number<input type="text" inputmode="numeric" id="pf-jersey" value="${esc(v.jersey)}" maxlength="2"></label>
-    <label class="f">Position${sel("pf-pos", POS, v.pos, "–")}</label>
-    <label class="f">Bats${sel("pf-bats", [["R", "Right"], ["L", "Left"], ["S", "Switch"]], v.bats, "–")}</label>
-    <label class="f">Throws${sel("pf-throws", [["R", "Right"], ["L", "Left"]], v.throws, "–")}</label>
-    <label class="f">Class${sel("pf-class", CLASS, v.classYear, "–")}</label></div>
-    <div class="actions"><button class="btn" data-act="${p ? "edit-save" : "add-save"}">${p ? "Save" : "Add player"}</button><button class="btn ghost" data-act="${p ? "edit-cancel" : "add-cancel"}">Cancel</button></div></section>`;
+    <label class="f">Position${sel("pf-pos", POS, v.pos)}</label>
+    <label class="f">Bats${sel("pf-bats", [["R", "Right"], ["L", "Left"], ["S", "Switch"]], v.bats)}</label>
+    <label class="f">Throws${sel("pf-throws", [["R", "Right"], ["L", "Left"]], v.throws)}</label>
+    <label class="f full">Class${sel("pf-class", CLASS, v.classYear)}</label></div>`;
 }
 const readPlayerForm = () => ({ first: val("pf-first"), last: val("pf-last"), jersey: val("pf-jersey"), pos: val("pf-pos"), bats: val("pf-bats"), throws: val("pf-throws"), classYear: val("pf-class") });
 const val = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
-function facts(p) {
-  const hand = { R: "Right", L: "Left", S: "Switch" };
-  return `<div class="kv"><div><b>${esc(p.jersey ?? "–")}</b><span>Number</span></div><div><b>${esc(p.pos || "–")}</b><span>Position</span></div>
-    <div><b>${esc(p.bats ? hand[p.bats] : "–")}</b><span>Bats</span></div><div><b>${esc(p.classYear || "–")}</b><span>Class</span></div></div>`;
-}
-function playerCard(p) {
-  if (!p) { S.sel = null; return rosterView(); }
-  if (S.editing) return playerForm(p);
-  const acc = p.access === "active" ? "He has signed in." : p.access === "invited" ? "He has a code but hasn't signed in yet." : "He doesn't have a sign-in yet.";
-  return `<div class="largetitle"><h1>${esc(fullName(p))}</h1><span class="sub">${esc([p.pos, p.classYear].filter(Boolean).join(" · "))}</span></div>
-    ${revealCard()}
-    <section class="card"><div class="hd"><h3>Player</h3><button class="linkbtn" data-act="edit">Edit</button></div>${facts(p)}</section>
-    <section class="card"><div class="hd"><h3>Season and at-bats</h3></div><p class="muted" style="margin:0">His last college season, strengths and weaknesses, and graded at-bats will show here.</p></section>
-    <section class="card"><div class="hd"><h3>Sign-in</h3><span class="chip ${p.access}">${p.access === "active" ? "Signed in" : p.access === "invited" ? "Code sent" : "No sign-in"}</span></div>
-      <p style="margin:0">${acc} With a code he sees only his own page, never his teammates'.</p>
-      <div class="actions"><button class="btn ghost" data-act="pcode">${p.access === "none" ? "Make his sign-in code" : "Make a new code"}</button></div></section>
-    <section class="card"><div class="hd"><h3>Remove from roster</h3></div><p class="muted" style="margin:0">His history stays, and his sign-in stops working.</p>
-      <div class="actions">${S.confirmDel === p.id ? `<button class="btn danger" data-act="del-yes">Remove ${esc(p.first)}</button><button class="btn ghost" data-act="del-no">Keep</button>` : `<button class="btn danger" data-act="del">Remove</button>`}</div></section>`;
-}
-function staffView() {
-  const rows = `<div class="list">${S.team.staff.map((s) => `<div class="row" style="cursor:default"><span class="num">${esc(s.name.replace(/^coach\s+/i, "")[0])}</span>
-    <span><b>${esc(s.name)}${s.you ? ' <span class="muted" style="font-weight:400">(you)</span>' : ""}</b><span class="meta">${s.access === "active" ? "Signed in" : "Code sent"}</span></span>
-    <span class="actions"><button class="linkbtn" data-act="scode" data-id="${esc(s.id)}" data-name="${esc(s.name)}">New code</button>${S.team.staff.length > 1 ? (S.confirmStaff === s.id ? `<button class="linkbtn" style="color:var(--st-bad)" data-act="sdel-yes" data-id="${esc(s.id)}">Confirm</button>` : `<button class="linkbtn" style="color:var(--st-bad)" data-act="sdel" data-id="${esc(s.id)}">Remove</button>`) : ""}</span></div>`).join("")}</div>`;
-  const add = S.addCoach ? `<section class="card"><div class="hd"><h3>Add a coach</h3></div><label class="f">Name<input type="text" id="sc-name" placeholder="e.g. Coach Lee"></label>
-      <p class="small muted" style="margin:0">Coaches see every player on the roster and can manage the team.</p>
-      <div class="actions"><button class="btn" data-act="sc-save">Add coach</button><button class="btn ghost" data-act="sc-cancel">Cancel</button></div></section>`
-    : `<button class="btn ghost" data-act="sc-open">Add a coach</button>`;
-  return add + rows;
-}
-function playerHome() {
-  const p = S.team.players[0];
-  if (!p) return `<section class="card"><p class="muted" style="margin:0">Your coach hasn't linked your player page yet.</p></section>`;
-  return `<div class="largetitle"><h1>${esc(p.first)}</h1><span class="sub">${esc(S.team.team.name)}</span></div>
-    <section class="card"><div class="hd"><h3>${esc(fullName(p))}</h3></div>${facts(p)}</section>
-    <section class="card"><div class="hd"><h3>Your season and at-bats</h3></div><p class="muted" style="margin:0">Your last season, what you do well, what to work on, and a grade for every at-bat will show here once your coaches start charting.</p></section>`;
-}
+const codeBlock = (s) => `<div class="code">${esc(s.code)}</div><button class="btn wide" data-act="copy">Copy code</button>
+  <p class="muted small" style="margin:0">${esc(s.note)} This is the only time it's shown. If it gets lost, make a new one and the old one stops working.</p>`;
+
+const SHEETS = {
+  player(s) {
+    const p = playerById(s.id); if (!p) return ["Player", ""];
+    const acc = p.access === "active" ? "He has signed in." : p.access === "invited" ? "He has a code but hasn't signed in yet." : "He doesn't have a sign-in yet.";
+    return [fullName(p), `<section class="card"><div class="hd"><h3>Player</h3><button class="link" data-act="sheet" data-s="edit" data-id="${esc(p.id)}">Edit</button></div>${facts(p)}</section>
+      <section class="card"><h3>Season and at-bats</h3><p class="muted" style="margin:0">His last college season, strengths and weaknesses, and graded at-bats will show here.</p></section>
+      <section class="card"><div class="hd"><h3>Sign-in</h3>${accessChip(p.access)}</div><p style="margin:0">${acc} With a code he sees only his own page, never his teammates'.</p>
+        <button class="btn soft" data-act="pcode" data-id="${esc(p.id)}">${p.access === "none" ? "Make his sign-in code" : "Make a new code"}</button></section>
+      <section class="card"><h3>Remove from roster</h3><p class="muted" style="margin:0">His history stays, and his sign-in stops working.</p>
+        <div class="actions">${S.confirm === p.id ? `<button class="btn danger" data-act="pdel" data-id="${esc(p.id)}">Remove ${esc(p.first)}</button><button class="btn soft" data-act="unconfirm">Keep</button>` : `<button class="btn danger" data-act="confirm" data-id="${esc(p.id)}">Remove</button>`}</div></section>`];
+  },
+  add: () => ["New player", playerForm(null) + `<button class="btn wide" data-act="add-save">Add player</button>`],
+  edit(s) { const p = playerById(s.id); return ["Edit player", playerForm(p) + `<div class="actions"><button class="btn" data-act="edit-save" data-id="${esc(p.id)}">Save</button><button class="btn soft" data-act="sheet" data-s="player" data-id="${esc(p.id)}">Cancel</button></div>`]; },
+  code: (s) => [s.title, codeBlock(s) + (s.back ? `<button class="btn soft wide" data-act="sheet" data-s="player" data-id="${esc(s.back)}">Back to ${esc(playerById(s.back)?.first || "player")}</button>` : "")],
+  coach(s) {
+    const c = S.team.staff.find((x) => x.id === s.id); if (!c) return ["Coach", ""];
+    return [c.name, `<section class="card"><div class="hd"><h3>Sign-in</h3><span class="chip ${c.access}">${c.access === "active" ? "Signed in" : "Code sent"}</span></div>
+      <p class="muted" style="margin:0">A new code turns the old one off.</p><button class="btn soft" data-act="scode" data-id="${esc(c.id)}">Make a new code</button></section>
+      ${S.team.staff.length > 1 ? `<section class="card"><h3>Remove from staff</h3><div class="actions">${S.confirm === c.id ? `<button class="btn danger" data-act="sdel" data-id="${esc(c.id)}">Remove ${esc(c.name)}</button><button class="btn soft" data-act="unconfirm">Keep</button>` : `<button class="btn danger" data-act="confirm" data-id="${esc(c.id)}">Remove</button>`}</div></section>` : ""}`];
+  },
+  addcoach: () => ["Add a coach", `<label class="f">Name<input type="text" id="sc-name" placeholder="e.g. Coach Lee" autocomplete="off"></label>
+    <p class="muted small" style="margin:0">Coaches see every player on the roster and can manage the team.</p><button class="btn wide" data-act="sc-save">Add coach</button>`],
+  editteam() { const t = S.team.team; return ["Team", `<div class="grid"><label class="f full">Name<input type="text" id="tm-name" value="${esc(t.name)}"></label>
+    <label class="f">Short name<input type="text" id="tm-short" value="${esc(t.shortName)}"></label><label class="f">Season<input type="number" id="tm-season" value="${esc(t.season)}"></label></div>
+    <button class="btn wide" data-act="tm-save">Save</button>`]; },
+  newteam: () => ["New team", `<div class="grid"><label class="f full">School and team name<input type="text" id="nt-name" placeholder="e.g. Ridgeline State Owls"></label>
+    <label class="f">Short name<input type="text" id="nt-short" placeholder="Ridgeline St."></label><label class="f">Season<input type="number" id="nt-season" value="${new Date().getFullYear()}"></label>
+    <label class="f full">Head coach's name<input type="text" id="nt-coach"></label></div><button class="btn wide" data-act="nt-save">Create team</button>`],
+};
+// drag the sheet down to close it (phones)
+(() => {
+  let d = null;
+  SHEET.addEventListener("pointerdown", (e) => {
+    if (innerWidth >= 760 || !e.target.closest(".grab,.sh") || e.target.closest("button")) return;
+    d = { y0: e.clientY, t0: performance.now(), y: 0, id: e.pointerId }; SHEET.setPointerCapture(e.pointerId); SHEET.classList.add("drag");
+  });
+  SHEET.addEventListener("pointermove", (e) => {
+    if (!d || e.pointerId !== d.id) return;
+    const dy = e.clientY - d.y0; d.y = dy < 0 ? -Math.sqrt(-dy) * 2 : dy; // rubber band upward
+    SHEET.style.transform = `translateY(${d.y}px)`;
+    const k = Math.max(0, Math.min(1, d.y / 400)); $("#stage").style.transform = `scale(${.94 + .06 * k}) translateY(${14 * (1 - k)}px)`;
+  });
+  const end = (e) => {
+    if (!d || e.pointerId !== d.id) return;
+    const v = d.y / Math.max(1, performance.now() - d.t0), y = d.y; d = null;
+    SHEET.classList.remove("drag"); $("#stage").style.transform = "";
+    if (y > 130 || (v > 0.6 && y > 30)) closeSheet(); else SHEET.style.transform = "";
+  };
+  SHEET.addEventListener("pointerup", end); SHEET.addEventListener("pointercancel", end);
+})();
+$("#scrim").addEventListener("click", () => closeSheet());
+addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
 
 /* ---------- actions ---------- */
 document.addEventListener("submit", async (e) => {
   if (e.target.id !== "signin") return; e.preventDefault();
-  const code = document.getElementById("code").value.trim();
-  if (code.replace(/[^A-Za-z0-9]/g, "").length < 10) { S.signinErr = "Codes look like XXXXX-XXXXX."; return render(); }
+  const code = $("#code").value.trim();
+  if (code.replace(/[^A-Za-z0-9]/g, "").length < 10) { const f = $("#signin"); f.classList.remove("shake"); f.offsetWidth; f.classList.add("shake"); haptic(); return; }
   S.token = code.toUpperCase(); ls.set("oc-token", S.token); S.signinErr = "";
   boot();
 });
+TABS.addEventListener("click", (e) => { if (TABS.dataset.justDragged) return; const b = e.target.closest("button[data-tab]"); if (b) selectTab(b.dataset.tab); });
 document.addEventListener("click", async (e) => {
   const b = e.target.closest("[data-act]"); if (!b) return;
-  const a = b.dataset.act, T = S.team && S.team.team.id;
+  const a = b.dataset.act, T = S.team && S.team.team.id, id = b.dataset.id;
+  const refresh = async () => { await reloadTeam(); renderPage(); };
   try {
     if (a === "signout") return signOut();
-    if (a === "team") return openTeam(b.dataset.id);
-    if (a === "teams") { ls.set("oc-team", null); S.me = await api("me"); Object.assign(S, { view: "teams", team: null, reveal: null, anim: true }); return render(); }
-    if (a === "nt-open") { S.newTeam = true; return render(); }
-    if (a === "nt-cancel") { S.newTeam = false; return render(); }
-    if (a === "nt-save") {
-      const r = await api("team", { method: "POST", body: { name: val("nt-name"), shortName: val("nt-short"), season: val("nt-season"), coachName: val("nt-coach") } });
-      S.newTeam = false; S.me = await api("me"); S.reveal = { title: "Head coach's code", code: r.code, note: `Send this to ${val("nt-coach") || "the head coach"} of ${r.team.name}.` }; return render();
-    }
-    if (a === "seg") { S.seg = b.dataset.v; S.reveal = null; return render(); }
-    if (a === "add") { S.adding = true; S.reveal = null; render(); document.getElementById("pf-first")?.focus(); return; }
-    if (a === "add-cancel") { S.adding = false; return render(); }
-    if (a === "add-save") { await api("players", { method: "POST", query: { team: T }, body: readPlayerForm() }); S.adding = false; await reloadTeam(); toast("Player added"); return render(); }
-    if (a === "open") { Object.assign(S, { sel: b.dataset.id, editing: false, reveal: null, confirmDel: null, anim: true }); render(); scrollTo(0, 0); return; }
-    if (a === "close") { Object.assign(S, { sel: null, editing: false, reveal: null, anim: true }); return render(); }
-    if (a === "edit") { S.editing = true; return render(); }
-    if (a === "edit-cancel") { S.editing = false; return render(); }
-    if (a === "edit-save") { await api("players", { method: "PATCH", query: { team: T, id: S.sel }, body: readPlayerForm() }); S.editing = false; await reloadTeam(); toast("Saved"); return render(); }
-    if (a === "pcode") {
-      const p = playerById(S.sel); const r = await api("access", { method: "POST", query: { team: T }, body: { player: S.sel } });
-      await reloadTeam(); S.reveal = { title: `${p.first}'s code`, code: r.code, note: `Send this to ${fullName(p)}. He signs in once on his phone.` }; return render();
-    }
-    if (a === "del") { S.confirmDel = S.sel; return render(); }
-    if (a === "del-no") { S.confirmDel = null; return render(); }
-    if (a === "del-yes") { await api("players", { method: "DELETE", query: { team: T, id: S.sel } }); await reloadTeam(); Object.assign(S, { sel: null, confirmDel: null }); toast("Removed from roster"); return render(); }
-    if (a === "sc-open") { S.addCoach = true; S.reveal = null; render(); document.getElementById("sc-name")?.focus(); return; }
-    if (a === "sc-cancel") { S.addCoach = false; return render(); }
-    if (a === "sc-save") { const name = val("sc-name"); const r = await api("access", { method: "POST", query: { team: T }, body: { coach: name } }); S.addCoach = false; await reloadTeam(); S.reveal = { title: `${name}'s code`, code: r.code, note: `Send this to ${name}.` }; return render(); }
-    if (a === "scode") { const r = await api("access", { method: "POST", query: { team: T }, body: { user: b.dataset.id } }); await reloadTeam(); S.reveal = { title: `${b.dataset.name}'s new code`, code: r.code, note: "The old code has stopped working." }; return render(); }
-    if (a === "sdel") { S.confirmStaff = b.dataset.id; return render(); }
-    if (a === "sdel-yes") { await api("access", { method: "DELETE", query: { team: T, user: b.dataset.id } }); S.confirmStaff = null; await reloadTeam(); toast("Coach removed"); return render(); }
-    if (a === "copy") { try { await navigator.clipboard.writeText(S.reveal.code); toast("Copied"); } catch { toast("Select the code to copy it"); } return; }
-    if (a === "reveal-done") { S.reveal = null; return render(); }
+    if (a === "team") return openTeam(id);
+    if (a === "teams") { closeSheet(true); ls.set("oc-team", null); S.me = await api("me"); return showTeams(); }
+    if (a === "sheet") return openSheet(b.dataset.s, { id });
+    if (a === "close") return closeSheet();
+    if (a === "confirm") { S.confirm = id; haptic(); return renderSheet(false); }
+    if (a === "unconfirm") { S.confirm = null; return renderSheet(false); }
+    if (a === "add-save") { await api("players", { method: "POST", query: { team: T }, body: readPlayerForm() }); closeSheet(); await refresh(); return toast("Player added"); }
+    if (a === "edit-save") { await api("players", { method: "PATCH", query: { team: T, id }, body: readPlayerForm() }); await refresh(); openSheet("player", { id }); return toast("Saved"); }
+    if (a === "pcode") { const p = playerById(id); const r = await api("access", { method: "POST", query: { team: T }, body: { player: id } }); await refresh();
+      return openSheet("code", { title: `${p.first}'s code`, code: r.code, note: `Send this to ${fullName(p)}. He signs in once on his phone.`, back: id }); }
+    if (a === "pdel") { await api("players", { method: "DELETE", query: { team: T, id } }); closeSheet(); await refresh(); return toast("Removed from roster"); }
+    if (a === "sc-save") { const name = val("sc-name"); const r = await api("access", { method: "POST", query: { team: T }, body: { coach: name } }); await refresh();
+      return openSheet("code", { title: `${name}'s code`, code: r.code, note: `Send this to ${name}.` }); }
+    if (a === "scode") { const c = S.team.staff.find((x) => x.id === id); const r = await api("access", { method: "POST", query: { team: T }, body: { user: id } }); await refresh();
+      return openSheet("code", { title: `${c.name}'s new code`, code: r.code, note: "The old code has stopped working." }); }
+    if (a === "sdel") { await api("access", { method: "DELETE", query: { team: T, user: id } }); closeSheet(); await refresh(); return toast("Coach removed"); }
+    if (a === "tm-save") { await api("team", { method: "PATCH", query: { id: T }, body: { name: val("tm-name"), shortName: val("tm-short"), season: val("tm-season") } }); closeSheet(); await refresh(); return toast("Saved"); }
+    if (a === "nt-save") { const coachName = val("nt-coach"); const r = await api("team", { method: "POST", body: { name: val("nt-name"), shortName: val("nt-short"), season: val("nt-season"), coachName } });
+      S.me = await api("me"); showTeams(); return openSheet("code", { title: "Head coach's code", code: r.code, note: `Send this to ${coachName} at ${r.team.name}.` }); }
+    if (a === "copy") { try { await navigator.clipboard.writeText(S.sheet.code); toast("Copied"); haptic(); } catch { toast("Select the code to copy it"); } return; }
   } catch (err) { if (err && err.code !== "sign_in") fail(err); }
 });
 boot();
