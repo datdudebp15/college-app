@@ -222,7 +222,7 @@ await test("pulls new TrackMan files newest first, skips old seasons, never impo
   assert.ok(!ftp.listed.includes("/v3/2022"), "seasons before the window aren't walked");
   const rows = await dbq(`SELECT batter_key, pitcher_key, bat_seo, pitch_type, call, source FROM pitches WHERE source = 'trackman' ORDER BY id`);
   assert.equal(rows.length, 3);
-  assert.equal(rows[0].bat_seo, "team:" + T, "our team, found from the most common TrackMan code");
+  assert.equal(rows[0].bat_seo, team.ncaa_seo || "team:" + T, "our team, found from the most common TrackMan code");
   assert.equal(rows[0].batter_key, "avery|m");
   const again = await runPull(team, await dbone(`SELECT * FROM integrations WHERE team_id = $1 AND source = 'trackman_ftp'`, [T]), 30000, fakeFtp(tree).factory);
   assert.equal(again.imported, 0, "same file, same size: skipped");
