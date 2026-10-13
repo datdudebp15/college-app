@@ -246,12 +246,22 @@ figure figcaption{font-size:12px;color:var(--muted);font-weight:600;text-align:c
 .sbc i{font:800 11.5px var(--mono);font-style:normal;padding:3px 6px;border-radius:6px;background:var(--fill);color:var(--ink-2)}
 .sbc i.h{background:var(--good-soft);color:var(--good)} .sbc i.w{background:var(--accent-soft);color:var(--accent)} .sbc i.k{background:var(--bad-soft);color:var(--bad)}
 .facedrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap} .facedrow .sbc{margin:0}
+/* dropdowns */
+details.drop>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;position:relative;padding-right:22px}
+details.drop>summary::-webkit-details-marker{display:none}
+details.drop>summary::after{content:"";position:absolute;right:4px;top:50%;width:8px;height:8px;border-right:2.2px solid var(--muted);border-bottom:2.2px solid var(--muted);transform:translateY(-70%) rotate(45deg);transition:transform var(--settle-d) var(--settle)}
+details.drop[open]>summary::after{transform:translateY(-30%) rotate(-135deg)}
+details.drop>summary h3{margin:0}
+details.drop.inner{background:var(--card);border-radius:14px;padding:10px 12px}
+details.drop.inner[open]>summary{margin-bottom:8px}
+@media print{details.drop>summary::after{display:none}}
 /* pitcher page */
 .pname{appearance:none;border:0;background:none;padding:0;font:800 17px var(--font);letter-spacing:-.02em;color:var(--accent);text-align:left}
 .ars td:first-child{white-space:nowrap} .ptd{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
 .legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px;font-weight:700;color:var(--ink-2)} .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
 .mixrows{display:flex;flex-direction:column;gap:8px}
 .mixrow{display:grid;grid-template-columns:118px 1fr;gap:10px;align-items:center}
+.mixrows.counts .mixrow{grid-template-columns:76px 1fr} .mixrows.counts .ml{font:800 15px var(--mono)} .mixrows.counts .ml small{font-family:var(--font)}
 .mixrow .ml{font-weight:700;font-size:13.5px;display:flex;flex-direction:column} .mixrow .ml small{font-weight:600;color:var(--muted);font-size:11.5px}
 .mixbar{display:flex;height:26px;border-radius:8px;overflow:hidden;background:var(--fill)}
 .mixbar span{display:grid;place-items:center;color:#fff;font:800 11.5px var(--font);min-width:0}
@@ -863,7 +873,7 @@ function pitcherSheet(s) {
     </tbody></table></div><p class="small muted" style="margin:0">IVB and HB are induced vertical and horizontal break in inches (HB positive = arm side). Whiff is per swing, chase per pitch out of the zone, CSW is called plus swinging strikes per pitch, EV is exit velocity allowed.</p></section>`;
   const legend = `<div class="legend">${types.map((t) => `<span><i style="background:${ptc(t)}"></i>${esc(t)}</span>`).join("")}</div>`;
   const counts = `<section class="card"><div class="hd"><h3>What he throws, by count</h3></div>${legend}
-    <div class="mixrows">${d.byCount.map((b) => `<div class="mixrow"><span class="ml">${esc(b.label)}<small>${b.n}</small></span>${mixBar(b.mix, types)}</div>`).join("")}</div>
+    <div class="mixrows counts">${d.byCount.map((b) => `<div class="mixrow"><span class="ml">${esc(b.label)}<small>${b.n} pitches</small></span>${b.n ? mixBar(b.mix, types) : `<div class="mixbar"></div>`}</div>`).join("")}</div>
     <h4>By batter</h4><div class="mixrows">${d.vsHand.map((v) => `<div class="mixrow"><span class="ml">vs ${v.side === "L" ? "lefties" : "righties"}<small>${v.pa} PA · K ${pc(v.kPct)} · BB ${pc(v.bbPct)}</small></span>${mixBar(v.mix, types)}</div>`).join("")}</div></section>`;
   const locT = S.locType && d.locations[S.locType] ? S.locType : "All";
   const loc = `<section class="card"><div class="hd"><h3>Where he throws it</h3></div>
@@ -876,7 +886,12 @@ function outingsCard(d) {
     ${d.recent.map((o) => `<tr><td>${esc(gameDay(o.date))}${o.started ? " ·&nbsp;S" : ""}</td><td>${esc(o.opponent)}</td><td class="n">${o.ip}</td><td class="n">${o.h}</td><td class="n">${o.bb}</td><td class="n">${o.k}</td><td class="n">${o.pitches || "–"}</td></tr>`).join("")}</tbody></table></div></section>` : "";
 }
 function facedCard(d) {
-  return d.faced.length ? `<section class="card"><div class="hd"><h3>Your hitters against him</h3></div><div class="list inset">${d.faced.map((f) => `<div class="row" style="cursor:default"><span class="num">${esc(initials(f.name))}</span><span><b>${esc(f.name)}</b>${abChips(f.outcomes)}</span><span class="chip">${f.outcomes.filter((o) => /^(1B|2B|3B|HR)$/.test(o)).length}-for-${f.outcomes.filter((o) => !/^(BB|IBB|HBP|SF|SH)$/.test(o)).length}</span></div>`).join("")}</div></section>` : "";
+  if (!d.faced.length) return "";
+  const rows = d.faced.map((f) => ({ name: f.name, s: statLine(f.outcomes) })).sort((x, y) => y.s.pa - x.s.pa);
+  const tot = statLine(d.faced.flatMap((f) => f.outcomes));
+  const tr = (n, s, cls = "") => `<tr${cls}><td>${esc(n)}</td><td class="n">${s.pa}</td><td class="n">${s.ab}</td><td class="n">${s.h}</td><td class="n">${s.d2}</td><td class="n">${s.d3}</td><td class="n">${s.hr}</td><td class="n">${s.bb}</td><td class="n">${s.k}</td><td class="n">${s.avg}/${s.obp}/${s.slg}</td></tr>`;
+  return `<details class="card more drop"><summary><h3>Your hitters against him</h3><span class="muted small">${esc(statText(d.faced.flatMap((f) => f.outcomes)))} · ${rows.length} hitter${rows.length === 1 ? "" : "s"}</span></summary><div class="tbl"><table><thead><tr><th>Hitter</th><th>PA</th><th>AB</th><th>H</th><th>2B</th><th>3B</th><th>HR</th><th>BB</th><th>K</th><th>AVG/OBP/SLG</th></tr></thead><tbody>
+    ${rows.map((r) => tr(r.name, r.s)).join("")}${rows.length > 1 ? tr("Team", tot, ' class="total"') : ""}</tbody></table></div></details>`;
 }
 
 /* ---------- player profile: next game, opponent, last game, season, year over year ---------- */
@@ -896,6 +911,15 @@ const OUTC = { KL: "Struck out looking", KS: "Struck out swinging", K: "Struck o
 // scorebook notation for result lists: K swinging, ꓘ (backwards K) looking
 const SB = { KS: "K", K: "K", KL: "ꓘ", BB: "BB", IBB: "IBB", HBP: "HBP", "1B": "1B", "2B": "2B", "3B": "3B", HR: "HR", GO: "GO", GDP: "GDP", FO: "FO", LO: "LO", PO: "PO", FFO: "FO", SF: "SF", SH: "SAC", FC: "FC", ROE: "E", CI: "CI", LDP: "DP", FDP: "DP", DP: "DP", RE: "ROB", OUT: "OUT" };
 const sbClass = (o) => (/^(1B|2B|3B|HR)$/.test(o) ? "h" : /^(BB|IBB|HBP|CI)$/.test(o) ? "w" : /^K/.test(o) ? "k" : "o");
+// a stat line from a list of plate-appearance results
+function statLine(o) {
+  const c = (re) => o.filter((x) => re.test(x)).length;
+  const pa = o.length, bb = c(/^(BB|IBB)$/), hbp = c(/^HBP$/), sf = c(/^SF$/), sh = c(/^SH$/), ab = pa - bb - hbp - sf - sh;
+  const d2 = c(/^2B$/), d3 = c(/^3B$/), hr = c(/^HR$/), h = c(/^(1B|2B|3B|HR)$/), k = c(/^K/);
+  const r = (a, b) => (b ? (a / b).toFixed(3).replace(/^0/, "") : "–");
+  return { pa, ab, h, d2, d3, hr, bb, hbp, k, avg: r(h, ab), obp: r(h + bb + hbp, ab + bb + hbp + sf), slg: r(h + d2 + 2 * d3 + 3 * hr, ab) };
+}
+const statText = (o) => { const s = statLine(o); return [`${s.h}-for-${s.ab}`, s.d2 ? (s.d2 > 1 ? s.d2 + " 2B" : "2B") : "", s.d3 ? (s.d3 > 1 ? s.d3 + " 3B" : "3B") : "", s.hr ? (s.hr > 1 ? s.hr + " HR" : "HR") : "", s.bb ? s.bb + " BB" : "", s.hbp ? s.hbp + " HBP" : "", s.k ? s.k + " K" : ""].filter(Boolean).join(" · "); };
 const abChips = (outcomes) => `<span class="sbc">${outcomes.map((o) => `<i class="${sbClass(o)}" title="${esc(OUTC[o] || o)}">${esc(SB[o] || o)}</i>`).join("")}</span>`;
 const HITS = new Set(["1B", "2B", "3B", "HR"]), ONBASE = new Set(["BB", "IBB", "HBP", "1B", "2B", "3B", "HR", "ROE", "CI"]);
 const f3 = (x) => (x == null ? "–" : Number(x).toFixed(3).replace(/^0/, "")), pc = (x) => (x == null ? "–" : Math.round(x) + "%");
@@ -943,7 +967,7 @@ function profileSections(id, self) {
       ${s.why ? `<p class="small muted" style="margin:0">${esc(s.why[0].toUpperCase() + s.why.slice(1))}.</p>` : ""}
       <div class="mini">${[["IP", s.ip], ["K%", pc(s.kPct)], ["BB%", pc(s.bbPct)], ["1st-pitch strike", pc(s.fpStrikePct)], ["Whiff", pc(s.whiffPct)], ["Ground balls", pc(s.gbPct)]].map(([l, v]) => `<span><b>${esc(v)}</b>${esc(l)}</span>`).join("")}</div>
       ${attack(s.name) ? `<p style="margin:0">${esc(attack(s.name).attack)}</p>` : s.notes.length ? `<p style="margin:0">${esc(s.notes.join(" "))}</p>` : ""}
-      ${s.faced && s.faced.length ? `<p class="small muted facedrow" style="margin:0">${self ? "You vs him" : "Him"}: ${abChips(s.faced.map((f) => f.outcome))}</p>` : ""}</div>`;
+      ${s.faced && s.faced.length ? `<p class="small muted" style="margin:0">${self ? "You" : "He"}: ${esc(statText(s.faced.map((f) => f.outcome)))} against him</p>` : ""}</div>`;
     out.push(`<section class="card"><div class="hd"><h3>${esc(o.name)} pitchers</h3></div>
       ${N.opponent ? `<p style="margin:0">${esc(N.opponent.overview)}</p>` : ""}
       ${o.starter ? pcard(o.starter) : ""}${o.bullpen.map(pcard).join("")}
@@ -1064,7 +1088,7 @@ function scoutPage() {
     const card = (p, tag) => `<div class="pitcher"><div class="ph"><button class="pname" data-act="sheet" data-s="pitcher" data-seo="${esc(d.opponent.seo)}" data-key="${esc(p.key)}">${esc(p.name)} ›</button><span class="chip${p.day ? " invited" : ""}">${esc(tag)}</span></div>
       <div class="mini">${[["IP", p.ip], ["K%", pc(p.kPct)], ["BB%", pc(p.bbPct)], ["1st-pitch strike", pc(p.fpStrikePct)], ["Whiff", pc(p.whiffPct)], ["Ground balls", pc(p.gbPct)]].map(([l, v]) => `<span><b>${esc(v)}</b>${esc(l)}</span>`).join("")}</div>
       ${(p.tendencies || []).length ? `<ul class="tend">${p.tendencies.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
-      ${p.hitters.length ? `<div class="mu">${p.hitters.map((h) => `<button class="murow" data-act="sheet" data-s="player" data-id="${esc(h.id)}"><b>${esc(h.name)}</b>${h.notes.length ? `<span>${esc(h.notes.join(" "))}</span>` : ""}${h.faced.length ? abChips(h.faced) : ""}</button>`).join("")}</div>` : (p.tendencies || []).length ? "" : `<p class="small muted" style="margin:0">Nothing stands out against your hitters.</p>`}</div>`;
+      ${p.hitters.length ? `<details class="drop inner"><summary><b>Your hitters vs him</b><span class="muted small">${p.hitters.length}</span></summary><div class="mu">${p.hitters.map((h) => `<button class="murow" data-act="sheet" data-s="player" data-id="${esc(h.id)}"><b>${esc(h.name)}</b>${h.notes.length ? `<span>${esc(h.notes.join(" "))}</span>` : ""}${h.faced.length ? `<span class="muted">vs him: ${esc(statText(h.faced))}</span>` : ""}</button>`).join("")}</div></details>` : (p.tendencies || []).length ? "" : `<p class="small muted" style="margin:0">Nothing stands out against your hitters.</p>`}</div>`;
     const sec = (title, xs, tag) => xs.length ? `<section class="card"><div class="hd"><h3>${title}</h3></div>${xs.map((p) => card(p, tag(p))).join("")}</section>` : "";
     body = `<section class="card"><div class="nextline"><b>${esc(d.opponent.name)}</b><span>${d.next ? "Next: " + esc(gameDay(d.next.date)) : esc(d.season) + " season"}</span></div>
         <div class="actions noprint"><button class="btn sm soft" data-act="print">Print or save as PDF</button></div>
@@ -1319,7 +1343,7 @@ document.addEventListener("click", async (e) => {
     if (a === "pd") { S.pd[b.dataset.k] = b.dataset.v; return S.sheet ? renderSheet(false) : renderPage(); }
     if (a === "sf-metric") { S.sf.metric = b.dataset.v; return renderPage(); }
     if (a === "pd-search") { S.sf = { player: b.dataset.id, season: b.dataset.season, type: "", count: "", result: "", hand: "", metric: "swingPct" }; closeSheet(true); return selectTab("search"); }
-    if (a === "print") { document.title = (S.sheet && S.sheet.kind === "pitcher" ? ((PP[S.team.team.id + "|" + S.sheet.seo + "|" + S.sheet.key] || {}).data || {}).name + " · scouting" : S.sheet && S.sheet.kind === "player" ? fullName(playerById(S.sheet.id) || { first: "Player", last: "" }) : "Scouting report") + " · " + S.team.team.name; window.print(); document.title = APP_NAME; return; }
+    if (a === "print") { document.title = (S.sheet && S.sheet.kind === "pitcher" ? ((PP[S.team.team.id + "|" + S.sheet.seo + "|" + S.sheet.key] || {}).data || {}).name + " · scouting" : S.sheet && S.sheet.kind === "player" ? fullName(playerById(S.sheet.id) || { first: "Player", last: "" }) : "Scouting report") + " · " + S.team.team.name; const closed = [...document.querySelectorAll("details:not([open])")]; closed.forEach((x) => (x.open = true)); window.print(); closed.forEach((x) => (x.open = false)); document.title = APP_NAME; return; }
     if (a === "gs") { S.gs = Number(b.dataset.v); return renderPage(); }
     if (a === "grade-game") { loadGame(id, b.dataset.game, true); return renderSheet(false); }
     if (a === "rewrite") { loadProfile(id, true); return renderSheet(false); }

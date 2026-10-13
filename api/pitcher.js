@@ -11,10 +11,8 @@ import { today } from "./_sync.js";
 const SWING = ["swinging_strike", "foul", "in_play"];
 const GX = [-1.4, -0.84, -0.28, 0.28, 0.84, 1.4], GZ = [0.9, 1.54, 2.18, 2.82, 3.46, 4.1];
 const ZONE = "(abs(plate_x) <= 0.83 AND plate_z BETWEEN 1.5 AND 3.5)";
-const BUCKETS = [
-  ["First pitch", "balls = 0 AND strikes = 0"], ["He's ahead", "strikes > balls"], ["Even", "balls = strikes AND NOT (balls = 0 AND strikes = 0)"],
-  ["He's behind", "balls > strikes"], ["Two strikes", "strikes = 2"], ["Full count", "balls = 3 AND strikes = 2"],
-];
+// every count, in the usual order
+const BUCKETS = [0, 1, 2, 3].flatMap((b) => [0, 1, 2].map((s) => [`${b}-${s}`, `balls = ${b} AND strikes = ${s}`]));
 
 export default handler(async (req, res, user) => {
   if (req.method !== "GET") return res.status(405).json({ error: "method" });

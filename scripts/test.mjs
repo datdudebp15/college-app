@@ -298,7 +298,7 @@ await test("pitcher page: arsenal, usage by count and hand, location, movement; 
   assert.ok(d.tracked > 300 && d.arsenal.length >= 2);
   const use = d.arsenal.reduce((s, a) => s + a.usage, 0); assert.ok(Math.abs(use - 100) < 1, "usage adds to 100: " + use);
   assert.ok(d.arsenal.every((a) => a.velo > 60 && a.spin > 1000 && a.ivb != null));
-  assert.equal(d.byCount.length, 6); assert.equal(d.vsHand.length, 2);
+  assert.deepEqual(d.byCount.map((c) => c.label), ["0-0", "0-1", "0-2", "1-0", "1-1", "1-2", "2-0", "2-1", "2-2", "3-0", "3-1", "3-2"]); assert.equal(d.vsHand.length, 2);
   assert.ok(Object.keys(d.locations).length === d.arsenal.length + 1 && d.movement.length > 100);
   assert.equal((await call("pitcher", { code: OTHER_COACH, query: { team: T, seo: "demo-ashgrove", pitcher: sp.key } })).status, 404);
   assert.equal((await call("pitcher", { code: COACH, query: { team: T, seo: "demo-ashgrove", pitcher: "x; drop" } })).status, 400);
