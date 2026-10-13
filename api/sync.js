@@ -4,6 +4,7 @@ import { syncTeam, today } from "./_sync.js";
 import { playerProfile } from "./_profile.js";
 import { note, seasonInput, postgameInput, opponentInput } from "./_writer.js";
 import { runPull } from "./integrations.js";
+import { gameLog } from "./_gamelog.js";
 
 // Pulls NCAA games for a team and writes the players' notes. Each call works for up to ~50 seconds and says
 // whether there's more; callers repeat until done.
@@ -39,7 +40,7 @@ export default async function handler(req, res) {
         const r = await runPull(team, integ, budget - (Date.now() - t0) - 5000);
         if (!r.done) return res.json({ done: false, team: team.id, step: "trackman" });
       }
-      // notes: postgame for games in the last two days, opponent for games in the next six, season when it changed
+      // notes: postgame and at-bat grades for games in the last two days, opponent for games in the next six, season when it changed
       const T = today(), soon = new Date(Date.parse(T) + 6 * 864e5).toISOString().slice(0, 10), recent = new Date(Date.parse(T) - 2 * 864e5).toISOString().slice(0, 10);
       let written = 0;
       for (const team of teams) {
@@ -51,6 +52,8 @@ export default async function handler(req, res) {
           if (si) { await note("season", p, team, String(prof.seasons[0].season), si, { write: true }); written++; }
           if (pi) { await note("postgame", p, team, prof.lastGame.id, pi, { write: true }); written++; }
           if (oi) { await note("opponent", p, team, `${prof.opponent.seo}:${prof.next.date}`, oi, { write: true }); written++; }
+          // Claude grades each at-bat of the last two days' games
+          if (pi) for (const g of (await gameLog(team, p)).games.filter((g) => g.date >= recent && g.by !== "claude")) { await gameLog(team, p, { gameId: g.id, write: true }); written++; }
         }
       }
       return res.json({ done: true, written });

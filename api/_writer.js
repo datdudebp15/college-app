@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import { query, one } from "./_db.js";
 import { fmt3 } from "./_hitting.js";
+import { letter } from "./_grade.js";
 
 // Claude's write-ups for a player: his season, his last game, his next opponent. Claude only explains numbers
 // the code already computed and is told to use no others. It doesn't write training plans: it helps him see how
@@ -29,6 +30,14 @@ const SCHEMAS = {
       change: { type: "string", description: "How he changed from his previous season, in 1-2 sentences, or an empty string if there is no earlier season." } } },
   postgame: { type: "object", additionalProperties: false, required: ["headline", "how", "workOn"],
     properties: { headline: { type: "string", description: "A few words, like '2-for-4, made them work'." }, how: { type: "string", description: "2-3 sentences on his at-bats." }, workOn: { type: "string", description: "One sentence: the one thing from this game to work on." } } },
+  game: { type: "object", additionalProperties: false, required: ["game", "atBats"],
+    properties: {
+      game: { type: "object", additionalProperties: false, required: ["grade", "summary"], properties: {
+        grade: { type: "string", enum: ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"] },
+        summary: { type: "string", description: "2 sentences on his approach this game: decisions and contact, not the box score." } } },
+      atBats: { type: "array", description: "One entry per at-bat, in the same order as the input.", items: { type: "object", additionalProperties: false, required: ["grade", "summary"], properties: {
+        grade: { type: "string", enum: ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"] },
+        summary: { type: "string", description: "One sentence on this at-bat's process: which pitches he swung at or took and the contact." } } } } } },
   opponent: { type: "object", additionalProperties: false, required: ["overview", "pitchers"],
     properties: { overview: { type: "string", description: "1-2 sentences on their staff." },
       pitchers: { type: "array", items: { type: "object", additionalProperties: false, required: ["name", "attack"], properties: { name: { type: "string" }, attack: { type: "string", description: "1-2 sentences: how he is likely to go after this hitter, from the numbers." } } } } } },
@@ -56,7 +65,8 @@ export async function note(kind, player, team, key, input, { write = false } = {
 
 async function askClaude(kind, input, teamId, what) {
   const client = new Anthropic();
-  const ask = { season: "Write the season note for this hitter.", postgame: "Write the postgame note for this hitter's last game.", opponent: "Write the opponent note: how their pitchers are likely to attack this hitter." }[kind];
+  const ask = { season: "Write the season note for this hitter.", postgame: "Write the postgame note for this hitter's last game.", opponent: "Write the opponent note: how their pitchers are likely to attack this hitter.",
+    game: "Grade each at-bat and the game on PROCESS, not results: swing decisions pitch by pitch (attack hittable strikes, especially early; lay off pitches off the plate; protect with two strikes) and quality of contact. A hard line-out can be an A; a bloop single on a chase can be a C. The data includes a rule-based score per at-bat as a reference; you may disagree with it when the pitch-by-pitch facts say otherwise." }[kind];
   const response = await client.beta.messages.create({
     model: MODEL, max_tokens: 4000,
     betas: ["server-side-fallback-2026-07-01"], fallbacks: "default",
@@ -103,6 +113,20 @@ export function opponentInput(player, prof) {
     game: { date: prof.next.date, opponent: o.name, home: prof.next.home }, pitchers: [P(o.starter), ...o.bullpen.map(P)].filter(Boolean) };
 }
 
+export function gameInput(player, game, atBats) {
+  const OUTW = { KL: "struck out looking", KS: "struck out swinging", BB: "walked", HBP: "hit by pitch", "1B": "single", "2B": "double", "3B": "triple", HR: "home run", GO: "ground out", GDP: "double play", FO: "fly out", SF: "sacrifice fly", LO: "line out", PO: "pop up", FFO: "foul out" };
+  const ruleGame = atBats.length ? atBats.reduce((s, a) => s + a.rules.score, 0) / atBats.length : 0;
+  const L = letter;
+  return {
+    hitter: { name: `${player.first_name} ${player.last_name}`, bats: player.bats },
+    game: { date: game.date, opponent: game.opponent, line: game.line },
+    ruleGameGrade: L(ruleGame),
+    atBats: atBats.map((a) => ({ inning: a.inning, pitcher: a.pitcher, result: OUTW[a.outcome] || a.outcome, ruleGrade: a.rules.grade, ruleScore: a.rules.score, facts: a.rules.facts,
+      pitches: a.pitches.length ? a.pitches.map((x) => ({ count: `${x.balls}-${x.strikes}`, type: x.type, mph: x.velo, location: x.zone ? `${x.zone} (${x.spot})` : null, call: x.call, ev: x.ev, la: x.la })) : null,
+      sequence: a.pitches.length ? null : a.seq })),
+  };
+}
+
 /* ---------- plain versions (no Claude) ---------- */
 const OUT = { KL: "struck out looking", KS: "struck out swinging", K: "struck out", BB: "walked", IBB: "was intentionally walked", HBP: "was hit by a pitch", "1B": "singled", "2B": "doubled", "3B": "tripled", HR: "homered",
   GO: "grounded out", GDP: "grounded into a double play", FO: "flied out", LO: "lined out", PO: "popped up", FFO: "fouled out", SF: "hit a sacrifice fly", SH: "bunted", FC: "reached on a fielder's choice", ROE: "reached on an error" };
@@ -126,6 +150,17 @@ const PLAIN = {
       headline: `${hits}-for-${abs} vs ${input.game.opponent}`,
       how: ab.map((a) => `${OUT[a.outcome] || "made an out"} in the ${ord(a.inning)}${a.pitcher ? ` against ${a.pitcher}` : ""}`).join("; ").replace(/^./, (c) => "You " + c) + (pitches ? `. You saw ${pitches} pitches.` : "."),
       workOn: "",
+    };
+  },
+  game(input) {
+    const sentence = (a) => {
+      const f = a.facts || [];
+      return f.length ? f.join("; ").replace(/^./, (c) => c.toUpperCase()) + "." : a.result ? `${a.result}.` : "";
+    };
+    const n = input.atBats.length, good = input.atBats.filter((a) => /^A/.test(a.ruleGrade)).length, bad = input.atBats.filter((a) => /^[DF]/.test(a.ruleGrade)).length;
+    return {
+      game: { grade: input.ruleGameGrade, summary: `${n} plate appearance${n === 1 ? "" : "s"}: ${good} graded A, ${bad} graded D or below on swing decisions and contact.` },
+      atBats: input.atBats.map((a) => ({ grade: a.ruleGrade, summary: sentence(a) })),
     };
   },
   opponent(input) {

@@ -238,6 +238,25 @@ figure figcaption{font-size:12px;color:var(--muted);font-weight:600;text-align:c
 .prow+.prow{border-top:1px solid var(--line)}
 .prow .pt{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font:800 12px var(--mono);background:var(--accent-soft);color:var(--accent)}
 .prow b{display:block;font-size:14.5px} .prow .meta{font-size:12px;color:var(--muted)} .pres{text-align:right;display:flex;flex-direction:column;align-items:flex-end}
+/* game logs */
+.grade{display:inline-grid;place-items:center;min-width:34px;height:28px;padding:0 8px;border-radius:9px;font:800 14px var(--font);background:var(--fill);color:var(--ink-2)}
+.grade.big{min-width:46px;height:46px;border-radius:15px;font-size:20px}
+.grade.gA{background:var(--good-soft);color:var(--good)} .grade.gB{background:var(--accent-soft);color:var(--accent)} .grade.gC{background:var(--fill);color:var(--ink-2)}
+.grade.gD{background:rgba(245,158,11,.16);color:var(--warn)} .grade.gF{background:var(--bad-soft);color:var(--bad)}
+.row.game{grid-template-columns:46px 1fr auto} .row.game .gl{font-size:13px;font-weight:700;color:var(--ink-2);text-align:right;white-space:nowrap}
+.abt{display:block;font-weight:800;font-size:16px;letter-spacing:-.02em} .ab-card .meta{font-size:13px;color:var(--muted)}
+.abgrid{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:start}
+.mz{width:110px;height:auto;background:var(--card-2);border-radius:14px}
+.mz .zb{fill:none;stroke:var(--muted);stroke-width:1.5}
+.pd{stroke:#fff;stroke-width:1.2} .pn{font:800 8.5px var(--font);fill:#fff}
+.pd.ball,.pn2.ball{fill:#8a93a6;background:#8a93a6} .pd.called_strike,.pn2.called_strike{fill:var(--warn);background:var(--warn)} .pd.swinging_strike,.pn2.swinging_strike{fill:var(--bad);background:var(--bad)}
+.pd.foul,.pn2.foul{fill:#b07cf0;background:#b07cf0} .pd.in_play,.pn2.in_play{fill:var(--accent);background:var(--accent)} .pd.hbp,.pn2.hbp{fill:#555;background:#555}
+.plist2{display:flex;flex-direction:column;gap:6px}
+.pr{display:grid;grid-template-columns:22px 1fr;gap:2px 8px;font-size:13.5px} .pr .pc{grid-column:2;color:var(--ink-2);font-size:12.5px}
+.pn2{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;color:#fff;font:800 11px var(--font)}
+.seqkey .pn2{width:16px;height:16px;font-size:9px;margin-right:2px}
+.seqrow{margin:0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+@media (max-width:380px){.abgrid{grid-template-columns:1fr}.mz{width:140px}}
 /* player profile */
 .card h4{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:6px 0 -4px}
 .stats small{display:block;font-size:11.5px;color:var(--muted);font-weight:600;margin-top:2px}
@@ -328,6 +347,7 @@ const I = {
   staff: '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 4.5V3.5h6v1M9 10h6M9 14h6M9 18h3"/></svg>',
   team: '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.3-3 7.7-7 9.5-4-1.8-7-5.2-7-9.5V6z"/><path d="M9 12l2 2 4-4"/></svg>',
   plug: '<svg viewBox="0 0 24 24"><path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/></svg>',
+  games: '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4M8 14h3M8 17h6"/></svg>',
   search: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 9.3h16M4 14.7h16M9.3 4v16M14.7 4v16"/></svg>',
   today: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>',
   scout: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5M11 7.5v7M7.5 11h7"/></svg>',
@@ -439,18 +459,18 @@ function showTeams() {
     ${S.me.user.admin ? `<button class="btn soft" data-act="sheet" data-s="newteam">New team</button>` : ""}`, "enter");
 }
 function tabList() {
-  return coach() ? [["today", "Today", I.today], ["roster", "Roster", I.roster], ["search", "Search", I.search], ["scout", "Scouting", I.scout], ["team", "Team", I.team]] : [["me", "Me", I.me], ["search", "Pitches", I.search], ["account", "Account", I.account]];
+  return coach() ? [["today", "Today", I.today], ["roster", "Roster", I.roster], ["search", "Search", I.search], ["scout", "Scouting", I.scout], ["team", "Team", I.team]] : [["me", "Me", I.me], ["games", "Games", I.games], ["account", "Account", I.account]];
 }
 function renderPage(anim) {
   const team = S.team.team, short = team.shortName || team.name;
   const left = S.viewAs ? `<button class="gbtn glass" data-act="exit-preview">${I.x}Exit preview</button>` : manyTeams() ? `<button class="gbtn glass icon" data-act="teams" aria-label="All teams">${I.back}</button>` : "";
   const right = coach() && S.tab === "roster" ? `<button class="gbtn glass icon" data-act="sheet" data-s="add" aria-label="Add a player">${I.plus}</button>`
     : coach() && S.tab === "staff" ? `<button class="gbtn glass icon" data-act="sheet" data-s="addcoach" aria-label="Add a coach">${I.plus}</button>` : "";
-  const titles = { today: "Today", scout: "Scouting", search: coach() ? "Search" : "Pitches", roster: "Roster", staff: "Staff", team: "Team", me: S.team.players[0] ? S.team.players[0].first : "Me", account: "Account" };
+  const titles = { games: "Games", today: "Today", scout: "Scouting", search: coach() ? "Search" : "Pitches", roster: "Roster", staff: "Staff", team: "Team", me: S.team.players[0] ? S.team.players[0].first : "Me", account: "Account" };
   topBar(left, `${titles[S.tab]} · ${short}`, `<span class="rgrp">${right}${profileBtn()}</span>`);
   const demo = (S.viewAs ? `<div class="note preview"><span>Previewing as <b>${esc(S.viewAs.name)}</b>. This is exactly what ${S.viewAs.role === "coach" ? "a coach" : "he"} sees. Read-only.</span><button class="btn sm" data-act="exit-preview">Exit</button></div>` : "")
     + (team.demo ? `<div class="note">Demo team. ${(S.team.players || []).some((p) => p.realPerson) ? `Players are fictional except ${esc(S.team.players.filter((p) => p.realPerson).map(fullName).join(", "))}, whose real stats are here for a trial.` : "Every player and coach here is fictional."}</div>` : "");
-  const body = { today: todayPage, scout: scoutPage, search: searchPage, roster: rosterPage, staff: staffPage, team: teamPage, me: mePage, account: accountPage }[S.tab]();
+  const body = { games: () => gamesPage(S.team.players[0] && S.team.players[0].id), today: todayPage, scout: scoutPage, search: searchPage, roster: rosterPage, staff: staffPage, team: teamPage, me: mePage, account: accountPage }[S.tab]();
   setPage(demo ? body.replace(/^(<div class="lt">[\s\S]*?<\/div>)/, `$1${demo}`) : body, anim);
 }
 function setPage(html, anim) {
@@ -661,6 +681,72 @@ function searchPage() {
 }
 const ordinal = (n) => n + (n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th");
 
+/* ---------- game logs and graded at-bats ---------- */
+const GL = {};
+function loadGames(pid) {
+  const k = S.team.team.id + "|" + pid;
+  if (!GL[k]) { GL[k] = { loading: true }; api("games", { query: { team: S.team.team.id, player: pid } }).then((d) => { GL[k] = { data: d }; }).catch((e) => { GL[k] = { error: e.code }; })
+    .finally(() => { if (S.sheet && (S.sheet.kind === "player" || S.sheet.kind === "gamelog") && S.sheet.id === pid) renderSheet(false); else if (S.view === "team" && S.tab === "games") renderPage(); }); }
+  return GL[k];
+}
+const gradeChip = (g) => g ? `<span class="grade g${esc(g[0])}">${esc(g)}</span>` : "";
+function lineText(l) { return [`${l.h}-for-${l.ab}`, ...l.xbh, l.bb ? (l.bb > 1 ? l.bb + " BB" : "BB") : "", l.hbp ? "HBP" : "", l.k ? (l.k > 1 ? l.k + " K" : "K") : ""].filter(Boolean).join(" · "); }
+function gameRows(games, pid) {
+  return `<div class="list inset">${games.map((g) => `<button class="row game" data-act="sheet" data-s="game" data-id="${esc(pid)}" data-game="${esc(g.id)}">
+    ${gradeChip(g.grade).replace('class="grade', 'class="grade big')}<span><b>${g.home ? "vs" : "at"} ${esc(g.opponent)}</b><span class="meta">${esc(gameDay(g.date))} · ${g.us > g.them ? "W" : g.us < g.them ? "L" : "T"} ${g.us}-${g.them}</span></span>
+    <span class="gl">${esc(lineText(g.line))}</span></button>`).join("")}</div>`;
+}
+function gamesPage(pid) {
+  if (!pid) return lt("Games", "") + `<div class="card"><p class="muted" style="margin:0">Your coach hasn't linked your player page yet.</p></div>`;
+  const st = loadGames(pid), d = st.data;
+  if (!d) return lt("Games", "") + (st.error ? `<div class="card"><p class="muted" style="margin:0">Couldn't load your games right now.</p></div>` : `<section class="card"><div class="skel"></div><div class="skel short"></div></section>`);
+  if (!d.games.length) return lt("Games", "") + `<div class="card"><p class="muted" style="margin:0">No games yet. Every game you play shows up here with each at-bat graded.</p></div>`;
+  const seasons = [...new Set(d.games.map((g) => g.season))];
+  S.gs = seasons.includes(S.gs) ? S.gs : seasons[0];
+  const seg = seasons.length > 1 ? `<div class="seg">${seasons.map((y) => `<button data-act="gs" data-v="${y}" aria-pressed="${S.gs === y}">${y}</button>`).join("")}</div>` : "";
+  return lt("Games", "Every at-bat graded on your approach, not the result") + seg + gameRows(d.games.filter((g) => g.season === S.gs), pid);
+}
+function gameLogCard(pid) {
+  const st = loadGames(pid), d = st.data;
+  if (!d) return `<section class="card"><h3>Game log</h3><div class="skel"></div></section>`;
+  if (!d.games.length) return "";
+  return `<section class="card"><div class="hd"><h3>Game log</h3><span class="muted small">${d.games.length} games</span></div>
+    <p class="small muted" style="margin:0">Each at-bat graded on process: swing decisions and contact, not the result.</p>
+    ${gameRows(d.games.slice(0, 6), pid)}${d.games.length > 6 ? `<button class="btn soft" data-act="sheet" data-s="gamelog" data-id="${esc(pid)}">All ${d.games.length} games</button>` : ""}</section>`;
+}
+const GD = {};
+function loadGame(pid, gid, write) {
+  const k = pid + "|" + gid;
+  if (!write && GD[k] && (GD[k].loading || GD[k].data)) return GD[k];
+  GD[k] = { loading: true, writing: !!write, data: GD[k] && GD[k].data };
+  api("games", { method: write ? "POST" : "GET", query: { team: S.team.team.id, player: pid, game: gid } }).then((d) => { GD[k] = { data: d }; if (write) toast("Graded by Claude"); }).catch((e) => { GD[k] = { error: e.code, data: GD[k].data }; })
+    .finally(() => { if (S.sheet && S.sheet.kind === "game" && S.sheet.game === gid) renderSheet(false); });
+  return GD[k];
+}
+function miniZone(pitches) {
+  const X = (x) => 60 + x * 34, Z = (z) => 150 - z * 30;
+  const dots = pitches.filter((p) => p.x != null).map((p) => `<g><circle cx="${X(p.x).toFixed(1)}" cy="${Z(p.z).toFixed(1)}" r="8" class="pd ${p.call}"/><text x="${X(p.x).toFixed(1)}" y="${(Z(p.z) + 3.5).toFixed(1)}" text-anchor="middle" class="pn">${p.no}</text></g>`).join("");
+  return `<svg class="mz" viewBox="0 0 120 150" role="img" aria-label="Where each pitch was, catcher's view"><rect x="${X(-0.83)}" y="${Z(3.5)}" width="${0.83 * 2 * 34}" height="${2 * 30}" rx="3" class="zb"/>${dots}</svg>`;
+}
+const CALLW = { ball: "Ball", called_strike: "Called strike", swinging_strike: "Swing and miss", foul: "Foul", in_play: "In play", hbp: "Hit by pitch" };
+function gameSheet(s) {
+  const st = loadGame(s.id, s.game), d = st.data, p = playerById(s.id) || (S.team.players[0] || {});
+  if (!d) return ["Game", st.error ? `<p class="muted">Couldn't load this game.</p>` : `<div class="skel"></div><div class="skel short"></div>`];
+  const g = d.game, n = d.note || {};
+  const ab = d.atBats.map((a) => `<section class="card ab-card"><div class="hd"><div><b class="abt">${esc(ordinal(a.inning))} inning · ${esc(OUTC[a.outcome] || a.outcome)}</b><span class="meta">vs ${esc(a.pitcher || "")}${a.pitches[0] && a.pitches[0].throws ? " (" + esc(a.pitches[0].throws) + "HP)" : ""}</span></div>${gradeChip(a.grade)}</div>
+      ${a.summary ? `<p style="margin:0">${esc(a.summary)}</p>` : ""}
+      ${a.pitches.length ? `<div class="abgrid">${miniZone(a.pitches)}<div class="plist2">${a.pitches.map((x) => `<div class="pr"><span class="pn2 ${x.call}">${x.no}</span><span><b>${esc(x.type || "Pitch")}${x.velo ? " " + x.velo.toFixed(0) : ""}</b> <span class="meta">${x.balls}-${x.strikes}${x.spot ? " · " + esc(x.spot) : ""}</span></span><span class="pc">${esc(CALLW[x.call] || x.call)}${x.ev ? ` · ${Math.round(x.ev)} mph, ${Math.round(x.la)}°` : ""}${x.video ? ` · <a class="link" href="${esc(x.video)}" target="_blank" rel="noopener">Video</a>` : ""}</span></div>`).join("")}</div></div>`
+        : `<p class="seqrow">${seqChips({ seq: a.seq || "", outcome: a.outcome })}<span class="muted small">pitch sequence from play-by-play</span></p>`}</section>`).join("");
+  return [`${g.home ? "vs" : "at"} ${g.opponent}`, `
+    <section class="card"><div class="hd"><div><b class="abt">${esc(gameDay(g.date))} · ${g.us > g.them ? "W" : g.us < g.them ? "L" : "T"} ${g.us}-${g.them}</b><span class="meta">${esc(fullName(p))} · ${esc(lineText(g.line))}</span></div>${gradeChip(d.gameGrade).replace('class="grade', 'class="grade big')}</div>
+      ${n.game && n.game.summary ? `<p style="margin:0">${esc(n.game.summary)}</p>` : ""}
+      <p class="by">${n.by === "claude" ? "Graded by Claude from every pitch" : "Graded from every pitch by the app's rules" + (d.claude ? "" : "; Claude grades once it's connected")}${n.stale ? " · update coming tonight" : ""}</p>
+      ${coach() && d.claude && !S.viewAs ? `<button class="btn soft sm" data-act="grade-game" data-id="${esc(s.id)}" data-game="${esc(s.game)}"${st.writing ? " disabled" : ""}>${st.writing ? "Claude is grading…" : "Grade with Claude now"}</button>` : ""}
+    </section>${ab}
+    <p class="seqkey"><span class="pn2 ball">1</span>ball <span class="pn2 called_strike">2</span>called strike <span class="pn2 swinging_strike">3</span>swing and miss <span class="pn2 foul">4</span>foul <span class="pn2 in_play">5</span>in play</p>
+    ${s.back ? `<button class="btn soft wide" data-act="sheet" data-s="player" data-id="${esc(s.id)}">Back to ${esc(p.first || "player")}</button>` : ""}`];
+}
+
 /* ---------- player profile: next game, opponent, last game, season, year over year ---------- */
 const PROF = {};
 function loadProfile(id, write) {
@@ -754,6 +840,7 @@ function profileSections(id, self) {
       ${improve.length ? `<h4>What to improve</h4><div class="pats">${improve.map((x) => pat(x, false)).join("")}</div>` : ""}
       ${!strengths.length && !improve.length ? `<p class="muted small" style="margin:0">${cur.source ? `From a ${esc(cur.source)}. Claude reads it and names strengths and what to improve once it's connected.` : m.pa < 40 ? `Not enough plate appearances yet to call anything a pattern.` : `Nothing stands out from the team averages.`}</p>` : ""}
       ${byLine(n)}</section>`);
+    out.push(gameLogCard(id));
     out.push(pitchCard(id, cur.season));
   } else out.push(`<section class="card"><h3>Season</h3><p class="muted" style="margin:0">No college plate appearances found for ${self ? "you" : "him"} in the NCAA play-by-play yet.</p></section>`);
 
@@ -991,6 +1078,8 @@ const SHEETS = {
     html += `<div class="actions">${S.me.teams.length > 1 || u.admin ? `<button class="btn soft" data-act="teams">${inTeam ? "Switch team" : "All teams"}</button>` : ""}<button class="btn danger" data-act="signout">Sign out</button></div>`;
     return ["Profile", html];
   },
+  game: (s) => gameSheet(s),
+  gamelog: (s) => { const st = loadGames(s.id), p = playerById(s.id); return [`${p ? p.first + "'s" : "Game"} games`, st.data ? gameRows(st.data.games, s.id) : `<div class="skel"></div>`]; },
   "int-ftp": () => ftpSheet(),
   "int-live": () => ["TrackMan live feed", trackmanCard().replace(/^<section class="card"><div class="hd"><h3>TrackMan live feed<\/h3>/, '<section class="card"><div class="hd"><h3>Addresses</h3>')],
   "int-api": () => ["TrackMan video", `<p style="margin:0">TrackMan's Data API adds a video clip to every pitch after each game (Edgertronic or iPad video on Portable B1, play video on Stadium V3), plus the full data without the file server.</p>
@@ -1056,6 +1145,7 @@ document.addEventListener("click", async (e) => {
     if (a === "signout") return signOut();
     if (a === "team") return openTeam(id);
     if (a === "teams") { closeSheet(true); S.viewAs = null; ls.set("oc-team", null); S.me = await api("me"); return showTeams(); }
+    if (a === "sheet" && b.dataset.s === "game") return openSheet("game", { id, game: b.dataset.game, back: !!(S.sheet && (S.sheet.kind === "player" || S.sheet.kind === "gamelog")) });
     if (a === "sheet") { if (b.dataset.s === "profile") S.pickPlayer = false; if (b.dataset.s === "int-ftp") S.ftpResult = null; return openSheet(b.dataset.s, { id }); }
     if (a === "close") return closeSheet();
     if (a === "confirm") { S.confirm = id; haptic(); return renderSheet(false); }
@@ -1091,6 +1181,8 @@ document.addEventListener("click", async (e) => {
     if (a === "sf-metric") { S.sf.metric = b.dataset.v; return renderPage(); }
     if (a === "pd-search") { S.sf = { player: b.dataset.id, season: b.dataset.season, type: "", count: "", result: "", hand: "", metric: "swingPct" }; closeSheet(true); return selectTab("search"); }
     if (a === "print") { document.title = (S.sheet && S.sheet.kind === "player" ? fullName(playerById(S.sheet.id) || { first: "Player", last: "" }) : "Scouting report") + " · " + S.team.team.name; window.print(); document.title = APP_NAME; return; }
+    if (a === "gs") { S.gs = Number(b.dataset.v); return renderPage(); }
+    if (a === "grade-game") { loadGame(id, b.dataset.game, true); return renderSheet(false); }
     if (a === "rewrite") { loadProfile(id, true); return renderSheet(false); }
     if (a === "ncaa-sync") { b.disabled = true; let n = 0, g = 0;
       try { for (let i = 0; i < 40; i++) { b.textContent = n ? `Updating… ${g} games` : "Updating…"; const r = await api("sync", { method: "POST", query: { team: T } }); n++; g += (r.did && r.did.games) || 0;

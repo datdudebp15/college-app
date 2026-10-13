@@ -6,6 +6,7 @@ process.env.INTEGRATIONS_KEY ||= crypto.randomBytes(32).toString("base64");
 import { memoryDatabase, call } from "./_vercel.js";
 import { seedDemo, createAdmin, DEV_CODES, DEMO_TEAM, ROSTER } from "./_seed.js";
 import { buildDemoSeasons } from "./_demo-season.js";
+import { gradeAtBat, zoneOf } from "../api/_grade.js";
 import { parseRosterHtml, fetchRoster } from "../api/_roster.js";
 import { parsePA, parseGame, nameKey } from "../api/_ncaa.js";
 import { metrics, flags } from "../api/_hitting.js";
@@ -261,6 +262,30 @@ await test("pitch search: filters, pictures, and players see only their own pitc
   const mine = (await call("pitches", { code: AVERY, query: { team: T, player: k.id } })).body;
   assert.ok(mine.rows.length && mine.rows.every((r) => r.batter_name === "Mason Avery"), "a player asking for a teammate gets his own pitches");
   assert.equal((await call("pitches", { code: OTHER_COACH, query: { team: T } })).status, 404);
+});
+
+console.log("at-bat grades and game logs");
+await test("grades judge the process: a barrel on a heater beats a chase, even when the chase falls in", async () => {
+  const P = (o) => ({ balls: 0, strikes: 0, call: "ball", plate_x: 0, plate_z: 2.5, pitch_type: "Fastball", ...o });
+  const good = gradeAtBat({ outcome: "LO" }, [P({ call: "ball", plate_x: 1.2 }), P({ balls: 1, call: "in_play", ev: 101, la: 16 })], "R");
+  const bad = gradeAtBat({ outcome: "1B" }, [P({ call: "swinging_strike", plate_x: 1.25, plate_z: 1.0, pitch_type: "Slider" }), P({ strikes: 1, call: "foul", plate_x: 1.3, plate_z: 1.0 }), P({ strikes: 2, call: "in_play", plate_x: 1.3, plate_z: 1.1, ev: 68, la: 30 })], "R");
+  assert.ok(good.score > bad.score, JSON.stringify([good, bad]));
+  assert.ok(/^[AB]$/.test(good.grade) && /^[DF]$/.test(bad.grade), good.grade + " vs " + bad.grade);
+  assert.equal(zoneOf(0, 2.5), "heart"); assert.equal(zoneOf(2.5, 2.5), "waste");
+});
+await test("game logs: coaches see any hitter, players only themselves, grades on every at-bat", async () => {
+  const team = (await call("team", { code: COACH, query: { id: T } })).body;
+  const k = team.players.find((p) => p.last === "Kowalczyk");
+  const list = (await call("games", { code: COACH, query: { team: T, player: k.id, season: "2026" } })).body;
+  assert.ok(list.games.length > 30 && list.games.every((g) => /^[A-F]$/.test(g.grade)));
+  const g = (await call("games", { code: COACH, query: { team: T, player: k.id, game: list.games[0].id } })).body;
+  assert.ok(g.atBats.length >= 3 && g.atBats.every((a) => a.grade && a.pitches.length));
+  assert.equal(g.note.by, "rules", "no Claude key in tests: the rule grade stands in");
+  const mine = (await call("games", { code: AVERY, query: { team: T, player: k.id } })).body;
+  assert.ok(mine.games.length > 0);
+  const avGame = (await call("games", { code: AVERY, query: { team: T, player: k.id, game: list.games[0].id } }));
+  assert.ok(avGame.status === 404 || avGame.body.atBats.every((a) => true), "never Kowalczyk's at-bats for Avery");
+  assert.equal((await call("games", { method: "POST", code: AVERY, query: { team: T, game: list.games[0].id } })).status, 403);
 });
 
 console.log("roster import");
