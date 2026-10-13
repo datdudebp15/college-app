@@ -112,7 +112,7 @@ const PLAIN = {
     const good = s.flags.filter((f) => f.sev === "good"), work = s.flags.filter((f) => f.sev !== "good" && f.sev !== "info");
     const prev = input.previousSeasons[0];
     return {
-      summary: `You hit ${fmt3(m.avg)}/${fmt3(m.obp)}/${fmt3(m.slg)} in ${m.pa} plate appearances over ${s.games} games in ${s.season}, with ${m.hr} home runs, ${m.bb} walks and ${m.k} strikeouts.`,
+      summary: `You hit ${fmt3(m.avg)}/${fmt3(m.obp)}/${fmt3(m.slg)} in ${m.pa} plate appearances over ${s.games} games in ${s.season}, with ${plural(m.hr, "home run")}, ${plural(m.bb, "walk")} and ${plural(m.k, "strikeout")}.`,
       strengths: good.slice(0, 3).map(({ title, detail }) => ({ title, detail })),
       improve: work.slice(0, 3).map(({ title, detail }) => ({ title, detail })),
       change: prev ? `In ${prev.season} you hit ${fmt3(prev.stats.avg)} with a ${Math.round(prev.stats.kPct)}% strikeout rate; in ${s.season}, ${fmt3(m.avg)} and ${Math.round(m.kPct)}%.` : "",
@@ -135,4 +135,5 @@ const PLAIN = {
     };
   },
 };
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 const ord = (n) => n + (n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th");

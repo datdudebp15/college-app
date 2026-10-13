@@ -1,5 +1,5 @@
 import { query, one } from "./_db.js";
-import { scoreboard, boxscore, playByPlay, schoolsIndex, parseGame, nameKey, PARSER_VERSION } from "./_ncaa.js";
+import { scoreboard, boxscore, playByPlay, schoolsIndex, parseGame, PARSER_VERSION } from "./_ncaa.js";
 
 // Keeps a team's NCAA data current. Work is done in small steps until a time budget runs out, then the
 // caller asks again (the nightly job loops; the backfill script loops). Every step is safe to repeat.
@@ -54,7 +54,13 @@ export async function syncTeam(team, budgetMs = 45000) {
   if (next) want.push(...(await finalGames(next.opponentSeo, [seasonOf(next.date), seasonOf(next.date) - 1])).slice(-20));
   for (const id of want) {
     if (left() < 5000) return { done: false, did };
-    if (await ensureGame(id)) did.games++;
+    try { if (await ensureGame(id)) did.games++; }
+    catch (e) {
+      // one game ncaa.com can't serve right now mustn't stop the rest; it's tried again tomorrow
+      if (e.code !== "ncaa_unavailable") throw e;
+      await query(`INSERT INTO ncaa_game_data (game_id, parser_v, fetched_at) VALUES ($1, 0, now()) ON CONFLICT (game_id) DO UPDATE SET fetched_at = now()`, [id]);
+      did.skipped = (did.skipped || 0) + 1;
+    }
   }
   return { done: true, did };
 }
@@ -72,8 +78,9 @@ async function finalGames(seo, seasons) {
 
 /** Fetches and parses one game if we don't have it (or the parser has improved since). Returns true if it did work. */
 export async function ensureGame(id) {
-  const have = await one(`SELECT parser_v, (box IS NOT NULL AND pbp IS NOT NULL) AS full FROM ncaa_game_data WHERE game_id = $1`, [id]);
+  const have = await one(`SELECT parser_v, (box IS NOT NULL AND pbp IS NOT NULL) AS full, fetched_at FROM ncaa_game_data WHERE game_id = $1`, [id]);
   if (have && have.full && have.parser_v === PARSER_VERSION) return false;
+  if (have && !have.full && Date.now() - new Date(have.fetched_at) < 864e5) return false; // missing or failed: retry once a day
   let box, pbp;
   if (have && have.full) ({ box, pbp } = await one(`SELECT box, pbp FROM ncaa_game_data WHERE game_id = $1`, [id]));
   else { box = await boxscore(id); pbp = await playByPlay(id); }
@@ -81,10 +88,10 @@ export async function ensureGame(id) {
   const g = parseGame(box, pbp);
   await query(`DELETE FROM ncaa_pas WHERE game_id = $1`, [id]);
   await query(`DELETE FROM ncaa_pitch_lines WHERE game_id = $1`, [id]);
-  await insertRows("ncaa_pas", ["game_id", "idx", "inning", "bat_seo", "pitch_seo", "batter_key", "batter", "pitcher", "outcome", "seq", "balls", "strikes", "pitches", "swings", "whiffs", "fouls", "called", "in_play", "hit", "ab", "bb", "field", "text"],
-    g.pas.map((p, i) => [id, i, p.inning, p.batSeo, p.pitchSeo, nameKey(p.last, p.first), `${p.last},${p.first}`, p.pitcher, p.outcome, p.seq, p.balls, p.strikes, p.pitches, p.swings, p.whiffs, p.fouls, p.called, p.inPlay, p.hit, p.ab, p.bb, p.field, p.text]));
-  await insertRows("ncaa_pitch_lines", ["game_id", "seo", "name", "started", "bf", "outs", "h", "bb", "k", "hbp", "hr", "pitches"],
-    g.pitchers.map((L) => [id, L.seo, L.name, L.started, L.bf, L.outs, L.h, L.bb, L.k, L.hbp, L.hr, L.pitches]));
+  await insertRows("ncaa_pas", ["game_id", "idx", "inning", "bat_seo", "pitch_seo", "batter_key", "batter", "pitcher", "pitcher_name", "outcome", "seq", "balls", "strikes", "pitches", "swings", "whiffs", "fouls", "called", "in_play", "hit", "ab", "bb", "field", "text"],
+    g.pas.map((p, i) => [id, i, p.inning, p.batSeo, p.pitchSeo, p.key, [p.first, p.last].filter(Boolean).join(" "), p.pitcher, p.pitcherName, p.outcome, p.seq, p.balls, p.strikes, p.pitches, p.swings, p.whiffs, p.fouls, p.called, p.inPlay, p.hit, p.ab, p.bb, p.field, p.text]));
+  await insertRows("ncaa_pitch_lines", ["game_id", "seo", "name", "display", "started", "bf", "outs", "h", "bb", "k", "hbp", "hr", "pitches"],
+    g.pitchers.map((L) => [id, L.seo, L.name, L.display, L.started, L.bf, L.outs, L.h, L.bb, L.k, L.hbp, L.hr, L.pitches]));
   await query(`INSERT INTO ncaa_game_data (game_id, box, pbp, parser_v, fetched_at) VALUES ($1, $2::jsonb, $3::jsonb, $4, now())
                ON CONFLICT (game_id) DO UPDATE SET box = $2::jsonb, pbp = $3::jsonb, parser_v = $4, fetched_at = now()`, [id, box ? JSON.stringify(box) : null, JSON.stringify(pbp), PARSER_VERSION]);
   return true;

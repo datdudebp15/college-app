@@ -73,12 +73,14 @@ const SCHEMA = [
     in_play boolean, hit boolean, ab boolean, bb text, field text, text text,
     PRIMARY KEY (game_id, idx)
   )`,
+  `ALTER TABLE ncaa_pas ADD COLUMN IF NOT EXISTS pitcher_name text`,
   `CREATE INDEX IF NOT EXISTS ncaa_pas_batter ON ncaa_pas (bat_seo, batter_key)`,
   `CREATE INDEX IF NOT EXISTS ncaa_pas_pitcher ON ncaa_pas (pitch_seo, pitcher)`,
   `CREATE TABLE IF NOT EXISTS ncaa_pitch_lines (
     game_id text NOT NULL, seo text NOT NULL, name text NOT NULL, started boolean, bf int, outs int, h int, bb int, k int, hbp int, hr int, pitches int,
     PRIMARY KEY (game_id, seo, name)
   )`,
+  `ALTER TABLE ncaa_pitch_lines ADD COLUMN IF NOT EXISTS display text`,
   // Claude's write-ups: kind = season | postgame | opponent; key = season year, game id, or opponent+date
   `CREATE TABLE IF NOT EXISTS notes (
     player_id text NOT NULL REFERENCES players(id) ON DELETE CASCADE, kind text NOT NULL, key text NOT NULL,

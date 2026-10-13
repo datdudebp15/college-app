@@ -2,7 +2,7 @@ import { query, one } from "./_db.js";
 import { nameKey } from "./_ncaa.js";
 import { metrics, flags } from "./_hitting.js";
 import { activeSeasons, nextGame, schoolSeo, today } from "./_sync.js";
-import { opponentStaff, likelyStarter, matchup, display } from "./_opponent.js";
+import { opponentStaff, likelyStarter, matchup } from "./_opponent.js";
 
 // Everything on a player's page, assembled from the NCAA data: his seasons (with year-over-year), his last game,
 // his next game and the opponent's pitchers lined up against him. Claude's write-ups are attached by the caller.
@@ -10,14 +10,17 @@ import { opponentStaff, likelyStarter, matchup, display } from "./_opponent.js";
 export async function playerProfile(team, p) {
   const seo = team.ncaa_seo;
   if (!seo) return { ready: false, reason: "no_ncaa_team" };
-  const key = nameKey(p.last_name, p.first_name);
+  const key = nameKey(p.last_name, p.first_name), bare = key.split("|")[0] + "|";
+  // some scorers write only the last name; count those too unless a teammate shares it
+  const twin = await one(`SELECT 1 FROM players WHERE team_id = $1 AND active AND id <> $2 AND lower(regexp_replace(last_name, '[^A-Za-z]', '', 'g')) = $3`, [team.id, p.id, key.split("|")[0]]);
+  const keys = twin ? [key] : [key, bare];
   const seasons = activeSeasons(team);
   const prevSeo = p.prev_school ? await schoolSeo(p.prev_school) : null;
   const schools = [seo, prevSeo].filter(Boolean);
 
   const rows = await query(`SELECT pa.*, g.date, g.season, g.home_seo, g.away_seo, g.home_name, g.away_name, g.home_score, g.away_score
     FROM ncaa_pas pa JOIN ncaa_games g ON g.id = pa.game_id
-    WHERE pa.batter_key = $1 AND pa.bat_seo = ANY($2::text[]) AND g.season = ANY($3::int[]) ORDER BY g.date, pa.game_id, pa.idx`, [key, schools, seasons]);
+    WHERE pa.batter_key = ANY($1::text[]) AND pa.bat_seo = ANY($2::text[]) AND g.season = ANY($3::int[]) ORDER BY g.date, pa.game_id, pa.idx`, [keys, schools, seasons]);
 
   // one block per season and school (a transfer has his old school's seasons too)
   const groups = new Map();
@@ -44,7 +47,7 @@ export async function playerProfile(team, p) {
     const home = g.home_seo === g.bat_seo;
     lastGame = {
       id: gid, date: g.date, opponent: home ? g.away_name : g.home_name, home, us: home ? g.home_score : g.away_score, them: home ? g.away_score : g.home_score,
-      pas: mine.map((r) => ({ inning: r.inning, outcome: r.outcome, seq: r.seq, balls: r.balls, strikes: r.strikes, pitches: r.pitches, bb: r.bb, field: r.field, pitcher: display(r.pitcher), text: r.text })),
+      pas: mine.map((r) => ({ inning: r.inning, outcome: r.outcome, seq: r.seq, balls: r.balls, strikes: r.strikes, pitches: r.pitches, bb: r.bb, field: r.field, pitcher: r.pitcher_name, text: r.text })),
     };
   }
 
@@ -59,7 +62,7 @@ export async function playerProfile(team, p) {
       const cutoff = new Date(Date.parse(next.date) - 21 * 864e5).toISOString().slice(0, 10);
       const pen = staff.filter((s) => s.name !== starter?.name && s.last >= cutoff && s.starts * 2 < s.apps).sort((a, b) => b.apps - a.apps).slice(0, 4);
       const faced = async (pk) => (await query(`SELECT pa.outcome, pa.seq, pa.balls, pa.strikes, g.date FROM ncaa_pas pa JOIN ncaa_games g ON g.id = pa.game_id
-        WHERE pa.batter_key = $1 AND pa.bat_seo = $2 AND pa.pitch_seo = $3 AND pa.pitcher = $4 ORDER BY g.date`, [key, seo, next.opponentSeo, pk]));
+        WHERE pa.batter_key = ANY($1::text[]) AND pa.bat_seo = $2 AND pa.pitch_seo = $3 AND pa.pitcher = $4 ORDER BY g.date`, [keys, seo, next.opponentSeo, pk]));
       const card = async (s, role) => ({ ...s, role, notes: matchup(s, latest && latest.metrics), faced: await faced(s.key) });
       opponent = {
         name: next.opponentName, seo: next.opponentSeo,

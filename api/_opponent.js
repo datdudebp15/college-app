@@ -19,17 +19,17 @@ export async function opponentStaff(seo, beforeDate) {
     const P = byName.get(L.name) || { name: L.name, apps: 0, starts: 0, outs: 0, bf: 0, k: 0, bb: 0, h: 0, hr: 0, pitches: 0, startDays: [], last: null, recent: [] };
     P.apps++; if (L.started) { P.starts++; P.startDays.push(L.date); }
     P.outs += L.outs; P.bf += L.bf; P.k += L.k; P.bb += L.bb; P.h += L.h; P.hr += L.hr; P.pitches += L.pitches;
-    P.last ??= L.date; if (P.recent.length < 4) P.recent.push({ date: L.date, started: L.started, outs: L.outs, bf: L.bf, k: L.k, bb: L.bb, h: L.h, pitches: L.pitches });
+    P.display ??= L.display; P.last ??= L.date; if (P.recent.length < 4) P.recent.push({ date: L.date, started: L.started, outs: L.outs, bf: L.bf, k: L.k, bb: L.bb, h: L.h, pitches: L.pitches });
     byName.set(L.name, P);
   }
   const staff = [...byName.values()].map((P) => {
     const xs = pas.filter((p) => p.pitcher === P.name);
-    const first = xs.map((p) => (p.seq ? p.seq[0] : p.in_play ? "X" : null)).filter(Boolean);
+    const first = xs.filter((p) => p.seq != null).map((p) => (p.seq ? p.seq[0] : p.in_play ? "X" : null)).filter(Boolean);
     const bip = xs.filter((p) => p.in_play && p.bb && p.bb !== "BU");
     const sw = xs.reduce((s, p) => s + p.swings, 0), wh = xs.reduce((s, p) => s + p.whiffs, 0);
     const ks = xs.filter((p) => /^K/.test(p.outcome));
     return {
-      name: display(P.name), key: P.name, apps: P.apps, starts: P.starts, ip: ip(P.outs), last: P.last, recent: P.recent,
+      name: P.display || display(P.name), key: P.name, apps: P.apps, starts: P.starts, ip: ip(P.outs), last: P.last, recent: P.recent,
       startWeekdays: [...new Set(P.startDays.slice(0, 6).map((d) => WD[weekday(d)]))],
       kPct: pct(P.k, P.bf), bbPct: pct(P.bb, P.bf), hPer9: P.outs ? Math.round((P.h / (P.outs / 3)) * 9 * 10) / 10 : null, hr: P.hr,
       pitchesPerBF: P.bf ? Math.round((P.pitches / P.bf) * 10) / 10 : null,
@@ -66,5 +66,5 @@ export function matchup(p, m) {
 }
 
 const ip = (outs) => Math.floor(outs / 3) + (outs % 3) / 10;
-/** "Bryan,Sam" -> "Sam Bryan" */
-export const display = (n) => { const [l, f] = String(n || "").split(","); return f ? `${f} ${l.replace(/(Jr|II|III)$/, " $1")}`.trim() : n; };
+/** A stored key ("bryan|s") when no box-score name was found: "S. Bryan" */
+export const display = (n) => { const [l, i] = String(n || "").split("|"); return l ? `${i ? i.toUpperCase() + ". " : ""}${l[0].toUpperCase()}${l.slice(1)}` : n; };

@@ -17,17 +17,18 @@ export function metrics(pas, bats) {
   const pitches = sum("pitches"), swings = sum("swings"), whiffs = sum("whiffs"), called = sum("called");
 
   // first pitch: the first letter of the sequence, or the ball put in play on 0-0
-  const first = pas.map((p) => (p.seq ? p.seq[0] : p.in_play ? "X" : p.outcome === "HBP" ? "H" : null)).filter(Boolean);
+  const known = pas.filter((p) => p.seq != null); // some scorers leave the count off
+  const first = known.map((p) => (p.seq ? p.seq[0] : p.in_play ? "X" : p.outcome === "HBP" ? "H" : null)).filter(Boolean);
   const fpSwing = first.filter((c) => /[SFX]/.test(c)).length, fpStrike = first.filter((c) => /[KSFX]/.test(c)).length;
 
   // counts: the count before the pitch that ended the plate appearance
   const bucket = (p) => (p.balls > p.strikes ? "ahead" : p.strikes > p.balls ? "behind" : "even");
   const byCount = {};
   for (const b of ["ahead", "even", "behind"]) {
-    const xs = pas.filter((p) => bucket(p) === b), ab = xs.filter((p) => p.ab).length, h = xs.filter((p) => p.hit).length;
+    const xs = known.filter((p) => bucket(p) === b), ab = xs.filter((p) => p.ab).length, h = xs.filter((p) => p.hit).length;
     byCount[b] = { pa: xs.length, avg: rate3(h, ab) };
   }
-  const two = pas.filter((p) => p.strikes >= 2);
+  const two = known.filter((p) => p.strikes >= 2);
   const twoFouls = two.reduce((s, p) => s + twoStrikeFouls(p.seq), 0);
 
   const bip = pas.filter((p) => p.in_play && p.bb && p.bb !== "BU");
@@ -41,7 +42,7 @@ export function metrics(pas, bats) {
     pa: PA, ab: AB, h: H, d2: D2, d3: D3, hr: HR, bb: BB, hbp: HBP, k: K, kl: KL,
     avg, obp, slg, ops: obp != null && slg != null ? Math.round((obp + slg) * 1000) / 1000 : null, iso: slg != null && avg != null ? Math.round((slg - avg) * 1000) / 1000 : null,
     kPct: pct(K, PA), bbPct: pct(BB, PA), klShare: pct(KL, K),
-    pitchesPerPA: PA ? Math.round((pitches / PA) * 100) / 100 : null,
+    pitchesPerPA: known.length ? Math.round((pitches / known.length) * 100) / 100 : null, seqPA: known.length,
     swingPct: pct(swings, pitches), whiffPct: pct(whiffs, swings), calledPct: pct(called, pitches - swings),
     fpSwingPct: pct(fpSwing, first.length), fpStrikePct: pct(fpStrike, first.length),
     twoStrike: { pa: two.length, kPct: pct(two.filter((p) => /^K/.test(p.outcome)).length, two.length), avg: rate3(two.filter((p) => p.hit).length, two.filter((p) => p.ab).length), foulsPerPA: two.length ? Math.round((twoFouls / two.length) * 100) / 100 : null },

@@ -208,11 +208,31 @@ await test("tracks who pitched to whom, starters first", async () => {
       { teamId: 1, plays: [{ playText: "AWAY pitching change: Reliever,Rob replaces Starter,Sam." }] },
       { teamId: 1, plays: [{ playText: "Second,Bat walked (3-0 BBBB)." }] } ] }] };
   const g = parseGame(null, pbp);
-  assert.deepEqual(g.pas.map((p) => [p.batSeo, p.pitchSeo, p.pitcher]), [["away-u", "home-u", null], ["home-u", "away-u", "Starter,Sam"], ["home-u", "away-u", "Reliever,Rob"]]);
-  const s = g.pitchers.find((p) => p.name === "Starter,Sam");
+  assert.deepEqual(g.pas.map((p) => [p.batSeo, p.pitchSeo, p.pitcher]), [["away-u", "home-u", null], ["home-u", "away-u", "starter|s"], ["home-u", "away-u", "reliever|r"]]);
+  const s = g.pitchers.find((p) => p.name === "starter|s");
   assert.deepEqual([s.started, s.bf, s.k, s.outs], [true, 1, 1, 1]);
 });
 await test("names match across sources", async () => assert.equal(nameKey("TarpleyJr", "Derrick"), nameKey("Tarpley", "Derrick")));
+await test("every scorer's name style reads the same", async () => {
+  for (const line of ["Gibson,Ethan singled (0-0).", "E. Gibson singled (0-0).", "GIBSON, E. singled (0-0).", "Gibson, E singled (0-0)."]) assert.equal(parsePA(line).key, "gibson|e", line);
+  assert.equal(parsePA("Gibson singled (0-0).").key, "gibson|");
+  const noCount = parsePA("Minnick, T grounded out to ss, RBI; Neises, T advanced to second.");
+  assert.deepEqual([noCount.key, noCount.outcome, noCount.seq, noCount.pitches], ["minnick|t", "GO", null, null]);
+  assert.equal(parsePA("W. Holzemer pinch hit for C. Grady."), null);
+  assert.equal(parsePA("Ellis, M advanced to third on a wild pitch; Yunger, T scored on a wild pitch."), null);
+});
+await test("\"A to p for B\" pitching changes, with teams from the box score", async () => {
+  const box = { teams: [{ teamId: "1", seoname: "home-u" }, { teamId: "2", seoname: "away-u" }], teamBoxscore: [
+    { teamId: 1, playerStats: [{ firstName: "Cal", lastName: "Grady" }, { firstName: "Sam", lastName: "Starter", pitcherStats: {} }, { firstName: "Rob", lastName: "Relief", pitcherStats: {} }] },
+    { teamId: 2, playerStats: [{ firstName: "Tom", lastName: "Yunger" }, { firstName: "Al", lastName: "Arm", pitcherStats: {} }] }] };
+  const pbp = { periods: [{ periodNumber: 1, playbyplayStats: [
+    { teamId: 1, plays: [{ playText: "C. Grady struck out swinging (1-2 BKFS)." }] },
+    { teamId: 1, plays: [{ playText: "R. Relief to p for Starter." }] },
+    { teamId: 2, plays: [{ playText: "Yunger, T doubled to left center (0-1 K)." }] } ] }] };
+  const g = parseGame(box, pbp);
+  assert.deepEqual(g.pas.map((p) => [p.key, p.batSeo, p.pitcher, p.pitcherName]), [["grady|c", "home-u", "arm|a", "Al Arm"], ["yunger|t", "away-u", "relief|r", "Rob Relief"]]);
+  assert.equal(g.pitchers.find((p) => p.name === "arm|a").started, true);
+});
 
 console.log("hitting numbers");
 const P = (o) => ({ outcome: "GO", seq: "", balls: 0, strikes: 0, pitches: 1, swings: 1, whiffs: 0, fouls: 0, called: 0, in_play: true, hit: false, ab: true, bb: "GB", field: "L", ...o });
