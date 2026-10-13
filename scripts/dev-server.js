@@ -9,6 +9,15 @@ import { memoryDatabase, call } from "./_vercel.js";
 import { seedDemo, createAdmin, DEV_CODES } from "./_seed.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+// Local secrets (SYNERGY_API_KEY, ANTHROPIC_API_KEY, ...) from .env.local, which git ignores. In production
+// the same names are set in Vercel's environment variables.
+const envFile = path.join(root, ".env.local");
+if (fs.existsSync(envFile)) {
+  for (const line of fs.readFileSync(envFile, "utf8").split(/\r?\n/)) {
+    const m = line.match(/^\s*([A-Z][A-Z0-9_]*)\s*=\s*(.*?)\s*$/);
+    if (m && m[2] && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
+  }
+}
 const PORT = Number(process.env.PORT) || 3020;
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml", ".json": "application/json", ".webmanifest": "application/manifest+json" };
 

@@ -81,6 +81,17 @@ const SCHEMA = [
     PRIMARY KEY (game_id, seo, name)
   )`,
   `ALTER TABLE ncaa_pitch_lines ADD COLUMN IF NOT EXISTS display text`,
+  // Pitch tracking (TrackMan, Synergy, or the simulated demo season): one row per pitch, linked to its plate
+  // appearance by game and index. video_url is a per-pitch clip when the source provides one.
+  `CREATE TABLE IF NOT EXISTS pitches (
+    id text PRIMARY KEY, game_id text NOT NULL, pa_idx int, pitch_no int, date text, season int, inning int,
+    bat_seo text, pitch_seo text, batter_key text, pitcher_key text, batter_side text, pitcher_throws text,
+    balls int, strikes int, pitch_type text, velo real, spin int, plate_x real, plate_z real, call text,
+    ev real, la real, bearing real, distance real, result text, video_url text, source text NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS pitches_batter ON pitches (bat_seo, batter_key)`,
+  `CREATE INDEX IF NOT EXISTS pitches_pitcher ON pitches (pitch_seo, pitcher_key)`,
+  `CREATE INDEX IF NOT EXISTS pitches_game ON pitches (game_id, pa_idx)`,
   // Claude's write-ups: kind = season | postgame | opponent; key = season year, game id, or opponent+date
   `CREATE TABLE IF NOT EXISTS notes (
     player_id text NOT NULL REFERENCES players(id) ON DELETE CASCADE, kind text NOT NULL, key text NOT NULL,
