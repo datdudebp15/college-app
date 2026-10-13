@@ -92,6 +92,17 @@ const SCHEMA = [
   `CREATE INDEX IF NOT EXISTS pitches_batter ON pitches (bat_seo, batter_key)`,
   `CREATE INDEX IF NOT EXISTS pitches_pitcher ON pitches (pitch_seo, pitcher_key)`,
   `CREATE INDEX IF NOT EXISTS pitches_game ON pitches (game_id, pa_idx)`,
+  // TrackMan live feed (Portable B1 / Stadium): one secret token per team in the webhook URLs, and every
+  // message stored raw on arrival (TrackMan sends each once, with no retries). Parsed into pitches later.
+  `CREATE TABLE IF NOT EXISTS trackman_feeds (
+    team_id text PRIMARY KEY REFERENCES teams(id) ON DELETE CASCADE, token text UNIQUE NOT NULL,
+    validated_at timestamptz, last_event_at timestamptz, created_at timestamptz NOT NULL DEFAULT now()
+  )`,
+  `CREATE TABLE IF NOT EXISTS trackman_events (
+    id bigserial PRIMARY KEY, team_id text NOT NULL REFERENCES teams(id) ON DELETE CASCADE, kind text NOT NULL,
+    session_id text, play_id text, payload jsonb NOT NULL, received_at timestamptz NOT NULL DEFAULT now()
+  )`,
+  `CREATE INDEX IF NOT EXISTS trackman_events_session ON trackman_events (team_id, session_id, received_at)`,
   // Claude's write-ups: kind = season | postgame | opponent; key = season year, game id, or opponent+date
   `CREATE TABLE IF NOT EXISTS notes (
     player_id text NOT NULL REFERENCES players(id) ON DELETE CASCADE, kind text NOT NULL, key text NOT NULL,

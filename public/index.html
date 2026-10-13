@@ -213,6 +213,7 @@ details.more summary::-webkit-details-marker{display:none}
 .mu{display:flex;flex-direction:column;gap:2px}
 .murow{appearance:none;border:0;background:var(--card);border-radius:12px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:3px;font-size:14px;color:var(--ink-2)}
 .murow b{color:var(--ink);font-size:15px}
+.copyrow{display:flex;gap:8px;align-items:center} .copyrow input{flex:1;min-width:0;font:500 13px var(--mono)}
 .tend{margin:0;padding-left:18px;color:var(--ink-2);font-size:14.5px;display:flex;flex-direction:column;gap:4px}
 .meta.lines{display:flex;flex-direction:column} .meta.lines span{white-space:nowrap} .meta.lines b{color:var(--ink-2);font-weight:700}
 .murow:active{transform:scale(.99)}
@@ -443,9 +444,23 @@ function teamPage() {
       <div><b>${S.team.staff.length}</b><span>Coaches</span></div><div><b>${S.team.players.filter((p) => p.access === "active").length}</b><span>Players signed in</span></div></div></section>
     <section class="card"><div class="hd"><h3>Roster from your school's site</h3></div><p class="muted" style="margin:0">${t.rosterUrl ? `Last imported from ${esc(new URL(t.rosterUrl).hostname)}. Import again to pick up new numbers, positions and classes.` : "Bring in your hitters with their numbers, positions, classes and bats/throws."}</p>
       <button class="btn soft" data-act="sheet" data-s="import">${t.rosterUrl ? "Import again" : "Import roster"}</button></section>
+    ${!S.viewAs ? trackmanCard() : ""}
     <section class="card"><div class="hd"><h3>NCAA games</h3><button class="link" data-act="sheet" data-s="editteam">Change</button></div>
       <p class="muted" style="margin:0">${t.ncaaSeo ? `Linked to <b style="color:var(--ink)">${esc(t.ncaaSeo)}</b> on ncaa.com. Box scores and play-by-play update every night; this brings them in now.` : "Not linked yet. Updating finds your team on ncaa.com by its name."}</p>
       <button class="btn soft" data-act="ncaa-sync">Update games now</button></section>` + accountCard();
+}
+const TMF = {};
+function trackmanCard() {
+  const k = S.team.team.id, st = TMF[k];
+  if (!st) { TMF[k] = { loading: true }; api("trackman", { query: { team: k } }).then((d) => { TMF[k] = { data: d }; }).catch((e) => { TMF[k] = { error: e.code }; }).finally(() => { if (S.tab === "team") renderPage(); }); }
+  const d = st && st.data;
+  const when = (x) => new Date(x).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  const status = !d ? "" : d.lastEventAt ? `<span class="chip active">Live data ${esc(when(d.lastEventAt))}</span>` : d.validatedAt ? `<span class="chip invited">Connected</span>` : `<span class="chip">Not connected</span>`;
+  const field = (label, v, act) => `<label class="f">${label}<span class="copyrow"><input type="text" readonly value="${esc(v)}"><button class="btn sm soft" data-act="copy-text" data-v="${esc(v)}">Copy</button></span></label>`;
+  return `<section class="card"><div class="hd"><h3>TrackMan live feed</h3>${status}</div>
+    <p class="muted" style="margin:0">For teams with TrackMan's Data API. Send these two addresses to TrackMan support; pitches then arrive here within seconds during games. Names, tags and video come in after the game through the post-game API.</p>
+    ${d ? field("Session address", d.session) + field("Ball events address", d.ball) + `<p class="small muted" style="margin:0">${d.events30d} messages in the last 30 days. Keep these private: anyone with them can send data to your team.</p>
+      <div class="actions"><button class="btn sm danger" data-act="tm-rotate">Make new addresses</button></div>` : st && st.error ? `<p class="muted" style="margin:0">Couldn't load this right now.</p>` : `<div class="skel"></div>`}</section>`;
 }
 function accountCard() {
   return `<section class="card"><div class="hd"><h3>Signed in as ${esc(S.me.user.name)}</h3></div>
@@ -854,6 +869,8 @@ document.addEventListener("click", async (e) => {
     if (a === "view-as-player" || a === "preview-player") { const p = (S.roster || S.team.players).find((x) => x.id === id); return startPreview("player", id, p ? fullName(p) : "a player"); }
     if (a === "exit-preview") return exitPreview();
     if (a === "scout-open") { SC.opp = b.dataset.opp; loadScout(SC.opp); return selectTab("scout"); }
+    if (a === "copy-text") { try { await navigator.clipboard.writeText(b.dataset.v); toast("Copied"); } catch { toast("Select the text to copy it"); } return; }
+    if (a === "tm-rotate") { if (!confirm("Make new addresses? The old ones stop working, and TrackMan support will need the new ones.")) return; const d = await api("trackman", { method: "POST", query: { team: T, rotate: "1" } }); TMF[T] = { data: d }; toast("New addresses made"); return renderPage(); }
     if (a === "rewrite") { loadProfile(id, true); return renderSheet(false); }
     if (a === "ncaa-sync") { b.disabled = true; let n = 0, g = 0;
       try { for (let i = 0; i < 40; i++) { b.textContent = n ? `Updating… ${g} games` : "Updating…"; const r = await api("sync", { method: "POST", query: { team: T } }); n++; g += (r.did && r.did.games) || 0;

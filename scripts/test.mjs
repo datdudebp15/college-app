@@ -145,6 +145,32 @@ await test("previewing a player from another team fails", async () => {
   assert.equal((await call("team", { code: ADMIN, query: { id: OTHER }, headers: { "x-view-as": "player:" + avery.id } })).status, 404);
 });
 
+console.log("trackman live feed");
+await test("coach gets two webhook URLs; players can't", async () => {
+  const r = await call("trackman", { code: COACH, query: { team: T } });
+  assert.equal(r.status, 200); assert.match(r.body.session, /kind=session$/); assert.match(r.body.ball, /kind=ball$/);
+  assert.equal((await call("trackman", { code: AVERY, query: { team: T } })).status, 403);
+});
+await test("answers TrackMan's validation in both forms, stores ball events, refuses unknown feeds", async () => {
+  const url = new URL((await call("trackman", { code: COACH, query: { team: T } })).body.ball);
+  const feed = url.searchParams.get("feed");
+  const plain = await call("trackman", { method: "POST", query: { feed, kind: "ball" }, body: { validationCode: "abc-123" } });
+  assert.deepEqual(plain.body, { validationResponse: "abc-123" });
+  const grid = await call("trackman", { method: "POST", query: { feed, kind: "session" }, body: [{ eventType: "Microsoft.EventGrid.SubscriptionValidationEvent", data: { validationCode: "xyz" } }] });
+  assert.deepEqual(grid.body, { validationResponse: "xyz" });
+  const ball = await call("trackman", { method: "POST", query: { feed, kind: "ball" }, body: { SessionId: "s1", PlayId: "p1", Pitch: { Speed: 91.2 } } });
+  assert.deepEqual(ball.body, { ok: true, stored: 1 });
+  assert.equal((await call("trackman", { method: "POST", query: { feed: "nope", kind: "ball" }, body: {} })).status, 404);
+  const after = (await call("trackman", { code: COACH, query: { team: T } })).body;
+  assert.ok(after.validatedAt && after.lastEventAt); assert.equal(after.events30d, 1);
+});
+await test("a new token turns the old URLs off", async () => {
+  const old = new URL((await call("trackman", { code: COACH, query: { team: T } })).body.ball).searchParams.get("feed");
+  await call("trackman", { method: "POST", code: COACH, query: { team: T, rotate: "1" } });
+  assert.equal((await call("trackman", { method: "POST", query: { feed: old, kind: "ball" }, body: { PlayId: "x" } })).status, 404);
+  assert.equal((await call("trackman", { method: "POST", code: ADMIN, query: { team: T, rotate: "1" }, headers: { "x-view-as": "coach" } })).status, 403, "not while previewing");
+});
+
 console.log("roster import");
 // A fictional roster page in the WMT Digital format (Nuxt "devalue" data: one flat array, objects point at entries by index).
 function nuxtPage(root) {
